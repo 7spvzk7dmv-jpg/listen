@@ -132,12 +132,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join(' ');
   }
 
+  /* =======================
+     LISTEN — CORRIGIDO (iOS)
+  ======================= */
+
   function listen() {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      feedback.textContent = 'Reconhecimento de voz não suportado.';
+      feedback.textContent = 'Reconhecimento de voz não suportado neste navegador.';
       return;
     }
 
@@ -154,12 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     rec.onerror = e => {
       feedback.textContent = '⚠️ Erro no microfone: ' + e.error;
-    };
-
-    rec.onend = () => {
-      if (feedback.textContent === '🎙️ Ouvindo... fale agora') {
-        feedback.textContent = '⚠️ Não ouvi nada. Tente falar mais alto.';
-      }
     };
 
     rec.onresult = e => {
@@ -189,8 +187,14 @@ document.addEventListener('DOMContentLoaded', () => {
       updateUI();
     };
 
-    // Safari iOS precisa desse pequeno atraso
-    setTimeout(() => rec.start(), 100);
+    rec.onend = () => {
+      if (feedback.textContent.includes('Ouvindo')) {
+        feedback.textContent = '⚠️ Não detectei fala. Tente novamente.';
+      }
+    };
+
+    // ⚠️ CHAMADA DIRETA — OBRIGATÓRIO NO SAFARI iOS
+    rec.start();
   }
 
   /* =======================
