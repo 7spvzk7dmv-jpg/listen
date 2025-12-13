@@ -1,5 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+  /* =======================
+     CONFIGURAÇÃO GERAL
+  ======================= */
+
   const DATASETS = {
     frases: 'data/frases.json',
     palavras: 'data/palavras.json'
@@ -18,7 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
     weights: {}
   };
 
-  // DOM
+  /* =======================
+     ELEMENTOS DO DOM
+  ======================= */
+
   const englishText = document.getElementById('englishText');
   const translationText = document.getElementById('translationText');
   const feedback = document.getElementById('feedback');
@@ -27,7 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const levelText = document.getElementById('levelText');
   const toggleDatasetBtn = document.getElementById('toggleDataset');
 
-  // Eventos
+  /* =======================
+     EVENTOS
+  ======================= */
+
   document.getElementById('playBtn').onclick = speak;
   document.getElementById('micBtn').onclick = listen;
   document.getElementById('translateBtn').onclick = toggleTranslation;
@@ -37,6 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadDataset();
 
+  /* =======================
+     DATASET
+  ======================= */
+
   async function loadDataset() {
     try {
       const res = await fetch(DATASETS[datasetKey]);
@@ -45,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateUI();
     } catch (e) {
       englishText.textContent = 'Erro ao carregar dataset.';
+      console.error(e);
     }
   }
 
@@ -58,6 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function nextSentence() {
+    if (!data.length) return;
+
     const filtered = data.filter(d => d.CEFR === stats.level);
     current = weightedRandom(filtered.length ? filtered : data);
 
@@ -67,11 +84,21 @@ document.addEventListener('DOMContentLoaded', () => {
     feedback.textContent = '';
   }
 
+  /* =======================
+     ÁUDIO (TTS)
+  ======================= */
+
   function speak() {
+    if (!current) return;
     const u = new SpeechSynthesisUtterance(current.ENG);
     u.lang = 'en-US';
+    speechSynthesis.cancel();
     speechSynthesis.speak(u);
   }
+
+  /* =======================
+     PRONÚNCIA (STT)
+  ======================= */
 
   function normalize(text) {
     return text
@@ -84,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function similarity(a, b) {
     if (!a || !b) return 0;
     if (a === b) return 1;
+
     let same = 0;
     for (let i = 0; i < Math.min(a.length, b.length); i++) {
       if (a[i] === b[i]) same++;
@@ -105,20 +133,40 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function listen() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-      alert('Reconhecimento de voz não suportado.');
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      feedback.textContent = 'Reconhecimento de voz não suportado.';
       return;
     }
 
-    const rec = new SR();
-    rec.lang = 'en-US';
+    const rec = new SpeechRecognition();
 
-    rec.onstart = () => feedback.textContent = '🎙️ Ouvindo...';
+    rec.lang = 'en-US';
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+
+    rec.onstart = () => {
+      feedback.textContent = '🎙️ Ouvindo... fale agora';
+    };
+
+    rec.onerror = e => {
+      feedback.textContent = '⚠️ Erro no microfone: ' + e.error;
+    };
+
+    rec.onend = () => {
+      if (feedback.textContent === '🎙️ Ouvindo... fale agora') {
+        feedback.textContent = '⚠️ Não ouvi nada. Tente falar mais alto.';
+      }
+    };
 
     rec.onresult = e => {
-      const spoken = normalize(e.results[0][0].transcript);
+      const spokenRaw = e.results[0][0].transcript;
+      const spoken = normalize(spokenRaw);
       const target = normalize(current.ENG);
+
       const score = similarity(spoken, target);
 
       englishText.innerHTML = highlightDifferences(target, spoken);
@@ -126,12 +174,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (score >= 0.75) {
         feedback.textContent = '✅ Boa pronúncia geral';
         stats.hits++;
-        stats.weights[current.ENG] = Math.max(1, (stats.weights[current.ENG] || 1) - 1);
+        stats.weights[current.ENG] =
+          Math.max(1, (stats.weights[current.ENG] || 1) - 1);
         adjustLevel(true);
       } else {
         feedback.textContent = '❌ Atenção às palavras destacadas';
         stats.errors++;
-        stats.weights[current.ENG] = (stats.weights[current.ENG] || 1) + 2;
+        stats.weights[current.ENG] =
+          (stats.weights[current.ENG] || 1) + 2;
         adjustLevel(false);
       }
 
@@ -139,8 +189,13 @@ document.addEventListener('DOMContentLoaded', () => {
       updateUI();
     };
 
-    rec.start();
+    // Safari iOS precisa desse pequeno atraso
+    setTimeout(() => rec.start(), 100);
   }
+
+  /* =======================
+     PROGRESSÃO CEFR
+  ======================= */
 
   function adjustLevel(success) {
     let i = levels.indexOf(stats.level);
@@ -148,6 +203,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!success && i > 0) i--;
     stats.level = levels[i];
   }
+
+  /* =======================
+     UI / ESTADO
+  ======================= */
 
   function toggleTranslation() {
     translationText.classList.toggle('hidden');
