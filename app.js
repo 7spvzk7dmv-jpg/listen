@@ -1,4 +1,34 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
 document.addEventListener('DOMContentLoaded', () => {
+
+  /* =======================
+     FIREBASE
+  ======================= */
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDHEzqBQ00kk3zACQU_tqJzvAVFM6erxks",
+    authDomain: "tca-listen-english.firebaseapp.com",
+    projectId: "tca-listen-english",
+    storageBucket: "tca-listen-english.firebasestorage.app",
+    messagingSenderId: "727416842890",
+    appId: "1:727416842890:web:89b1d0215b297a7563db73"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
   /* =======================
      CONFIGURAÇÃO GERAL
@@ -11,20 +41,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const levels = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
-  let datasetKey = localStorage.getItem('dataset') || 'frases';
+  let user = null;
   let data = [];
   let current = null;
+  let selectedVoice = null;
 
-  let examMode = JSON.parse(localStorage.getItem('examMode')) || false;
+  let datasetKey = 'frases';
+  let examMode = false;
 
-  let stats = JSON.parse(localStorage.getItem('stats')) || {
+  let stats = {
     level: 'A1',
     hits: 0,
     errors: 0,
     weights: {}
   };
-
-  let selectedVoice = null;
 
   /* =======================
      ELEMENTOS DO DOM
@@ -38,21 +68,58 @@ document.addEventListener('DOMContentLoaded', () => {
   const levelText = document.getElementById('levelText');
   const toggleDatasetBtn = document.getElementById('toggleDataset');
   const examModeBtn = document.getElementById('examModeBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  /* =======================
+     AUTENTICAÇÃO
+  ======================= */
+
+  onAuthStateChanged(auth, async u => {
+    if (!u) {
+      location.href = 'login.html';
+      return;
+    }
+
+    user = u;
+
+    const ref = doc(db, 'users', user.uid);
+    const snap = await getDoc(ref);
+
+    if (snap.exists()) {
+      const d = snap.data();
+      stats = d.stats || stats;
+      datasetKey = d.dataset || datasetKey;
+      examMode = d.examMode || examMode;
+    } else {
+      await setDoc(ref, {
+        email: user.email,
+        stats,
+        dataset: datasetKey,
+        examMode
+      });
+    }
+
+    initVoices();
+    loadDataset();
+    updateUI();
+  });
+
+  logoutBtn.onclick = async () => {
+    await signOut(auth);
+    location.href = 'login.html';
+  };
 
   /* =======================
      EVENTOS
   ======================= */
 
-  document.getElementById('playBtn').addEventListener('click', speakSentence);
-  document.getElementById('micBtn').addEventListener('click', listen);
-  document.getElementById('translateBtn').addEventListener('click', toggleTranslation);
-  document.getElementById('nextBtn').addEventListener('click', nextSentence);
-  document.getElementById('resetBtn').addEventListener('click', resetProgress);
-  toggleDatasetBtn.addEventListener('click', toggleDataset);
-  examModeBtn.addEventListener('click', toggleExamMode);
-
-  initVoices();
-  loadDataset();
+  document.getElementById('playBtn').onclick = () => speakText(current?.ENG);
+  document.getElementById('micBtn').onclick = listen;
+  document.getElementById('translateBtn').onclick = toggleTranslation;
+  document.getElementById('nextBtn').onclick = nextSentence;
+  document.getElementById('resetBtn').onclick = resetProgress;
+  toggleDatasetBtn.onclick = toggleDataset;
+  examModeBtn.onclick = toggleExamMode;
 
   /* =======================
      VOZ (TTS)
@@ -61,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function initVoices() {
     const preferred = ['Samantha', 'Daniel', 'Aaron'];
 
-    function pickVoice() {
+    function pick() {
       const voices = speechSynthesis.getVoices();
       selectedVoice =
         voices.find(v => preferred.includes(v.name) && v.lang.startsWith('en'))
@@ -69,31 +136,19 @@ document.addEventListener('DOMContentLoaded', () => {
         || voices[0];
     }
 
-    pickVoice();
-    speechSynthesis.onvoiceschanged = pickVoice;
+    pick();
+    speechSynthesis.onvoiceschanged = pick;
   }
 
   function speakText(text) {
     if (!text) return;
 
     speechSynthesis.cancel();
-
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-US';
     if (selectedVoice) u.voice = selectedVoice;
     u.rate = 0.95;
-    u.pitch = 1.0;
-
     speechSynthesis.speak(u);
-  }
-
-  function speakSentence() {
-    if (!current) return;
-    speakText(current.ENG);
-  }
-
-  function speakWord(word) {
-    speakText(word);
   }
 
   /* =======================
@@ -104,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const res = await fetch(DATASETS[datasetKey]);
     data = await res.json();
     nextSentence();
-    updateUI();
   }
 
   function weightedRandom(items) {
@@ -120,10 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const filtered = data.filter(d => d.CEFR === stats.level);
     current = weightedRandom(filtered.length ? filtered : data);
 
-    englishText.textContent = examMode
-      ? '🎧 Ouça e repita'
-      : current.ENG;
-
+    englishText.textContent = examMode ? '🎧 Ouça e repita' : current.ENG;
     translationText.textContent = current.PTBR;
     translationText.classList.add('hidden');
     feedback.textContent = '';
@@ -134,11 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ======================= */
 
   function normalize(text) {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z']/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    return text.toLowerCase().replace(/[^a-z']/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
   function similarity(a, b) {
@@ -149,30 +196,24 @@ document.addEventListener('DOMContentLoaded', () => {
     return same / Math.max(a.length, b.length);
   }
 
+  function adjustLevel(success) {
+    let i = levels.indexOf(stats.level);
+    if (success && i < levels.length - 1) i++;
+    if (!success && i > 0) i--;
+    stats.level = levels[i];
+  }
+
   function highlightDifferences(target, spoken) {
     const t = target.split(' ');
     const s = spoken.split(' ');
-
     return t.map((w, i) => {
-      const score = similarity(w, s[i] || '');
-
-      if (score >= 0.85) return `<span>${w}</span>`;
-
-      const cls =
-        score >= 0.5
-          ? 'text-yellow-400 underline cursor-pointer'
-          : 'text-red-400 underline cursor-pointer';
-
+      const sc = similarity(w, s[i] || '');
+      if (sc >= 0.85) return `<span>${w}</span>`;
+      const cls = sc >= 0.5
+        ? 'text-yellow-400 underline cursor-pointer'
+        : 'text-red-400 underline cursor-pointer';
       return `<span class="${cls}" data-word="${w}">${w}</span>`;
     }).join(' ');
-  }
-
-  function attachWordListeners() {
-    document.querySelectorAll('[data-word]').forEach(el => {
-      el.addEventListener('click', () => {
-        speakWord(el.dataset.word);
-      });
-    });
   }
 
   function listen() {
@@ -181,57 +222,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const rec = new SR();
     rec.lang = 'en-US';
-    rec.continuous = false;
-    rec.interimResults = false;
 
-    rec.onstart = () => feedback.textContent = '🎙️ Ouvindo...';
-
-    rec.onresult = e => {
+    rec.onresult = async e => {
       const spoken = normalize(e.results[0][0].transcript);
       const target = normalize(current.ENG);
       const score = similarity(spoken, target);
 
       englishText.innerHTML = highlightDifferences(target, spoken);
-      attachWordListeners();
+      document.querySelectorAll('[data-word]').forEach(el =>
+        el.onclick = () => speakText(el.dataset.word)
+      );
 
       if (score >= 0.75) {
         feedback.textContent = '✅ Boa pronúncia';
         stats.hits++;
-        stats.weights[current.ENG] =
-          Math.max(1, (stats.weights[current.ENG] || 1) - 1);
         adjustLevel(true);
       } else {
         feedback.textContent = '❌ Atenção às palavras';
         stats.errors++;
-        stats.weights[current.ENG] =
-          (stats.weights[current.ENG] || 1) + 2;
         adjustLevel(false);
       }
 
-      saveStats();
+      await saveUserData();
       updateUI();
-    };
-
-    rec.onerror = () => {
-      feedback.textContent = '⚠️ Erro no reconhecimento de voz';
     };
 
     rec.start();
   }
 
   /* =======================
-     PROGRESSÃO CEFR
-  ======================= */
-
-  function adjustLevel(success) {
-    let i = levels.indexOf(stats.level);
-    if (success && i < levels.length - 1) i++;
-    if (!success && i > 0) i--;
-    stats.level = levels[i];
-  }
-
-  /* =======================
-     UI
+     UI / ESTADO
   ======================= */
 
   function toggleTranslation() {
@@ -240,20 +260,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function toggleDataset() {
     datasetKey = datasetKey === 'frases' ? 'palavras' : 'frases';
-    localStorage.setItem('dataset', datasetKey);
+    saveUserData();
     loadDataset();
   }
 
   function toggleExamMode() {
     examMode = !examMode;
-    localStorage.setItem('examMode', JSON.stringify(examMode));
+    saveUserData();
     nextSentence();
     updateUI();
   }
 
   function resetProgress() {
     if (!confirm('Deseja apagar todo o progresso?')) return;
-    localStorage.clear();
+    stats = { level: 'A1', hits: 0, errors: 0, weights: {} };
+    saveUserData();
     location.reload();
   }
 
@@ -265,8 +286,13 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
   }
 
-  function saveStats() {
-    localStorage.setItem('stats', JSON.stringify(stats));
+  async function saveUserData() {
+    if (!user) return;
+    await setDoc(doc(db, 'users', user.uid), {
+      stats,
+      dataset: datasetKey,
+      examMode
+    }, { merge: true });
   }
 
 });
