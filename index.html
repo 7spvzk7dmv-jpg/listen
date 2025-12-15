@@ -14,35 +14,67 @@
     <header class="flex justify-between items-center">
       <h1 class="text-xl font-semibold">English Trainer</h1>
       <div class="flex gap-2">
-        <button id="examModeBtn" class="bg-zinc-700 px-3 py-1 rounded">📝 Exame</button>
-        <button id="toggleDataset" class="bg-zinc-700 px-3 py-1 rounded">Dataset</button>
-        <button id="logoutBtn" class="bg-red-600 px-3 py-1 rounded">Sair</button>
+        <button id="examModeBtn"
+          class="text-sm bg-zinc-700 px-3 py-1 rounded hover:bg-zinc-600">
+          📝 Modo exame: OFF
+        </button>
+        <button id="toggleDataset"
+          class="text-sm bg-zinc-700 px-3 py-1 rounded hover:bg-zinc-600">
+          Dataset: frases
+        </button>
+        <button id="logoutBtn"
+          class="text-sm bg-red-600 px-3 py-1 rounded hover:bg-red-500">
+          Sair
+        </button>
       </div>
     </header>
 
     <div class="text-center space-y-3">
-      <p id="englishText" class="text-2xl"></p>
-      <p id="translationText" class="hidden text-zinc-400"></p>
-      <p id="levelText" class="text-sm"></p>
+      <p id="englishText" class="text-2xl font-medium leading-relaxed"></p>
+      <p id="translationText" class="text-zinc-400 hidden"></p>
+      <p id="levelText" class="text-sm text-zinc-500"></p>
     </div>
 
     <div class="flex justify-center gap-3 flex-wrap">
-      <button id="playBtn">🔊 Ouvir</button>
-      <button id="micBtn">🎤 Falar</button>
-      <button id="translateBtn">🇧🇷 Tradução</button>
-      <button id="nextBtn">➡️ Próxima</button>
+      <button id="playBtn" class="bg-zinc-700 px-4 py-2 rounded-lg">🔊 Ouvir</button>
+      <button id="micBtn" class="bg-zinc-700 px-4 py-2 rounded-lg">🎤 Falar</button>
+      <button id="translateBtn" class="bg-zinc-700 px-4 py-2 rounded-lg">🇧🇷 Tradução</button>
+      <button id="nextBtn" class="bg-zinc-700 px-4 py-2 rounded-lg">➡️ Próxima</button>
     </div>
 
-    <div class="text-center text-sm">
+    <div class="text-center text-sm space-y-1">
       <p id="feedback"></p>
-      ✅ <span id="hits">0</span> | ❌ <span id="errors">0</span>
+      <p>
+        ✅ Acertos: <span id="hits">0</span> |
+        ❌ Erros: <span id="errors">0</span>
+      </p>
     </div>
 
-    <button id="resetBtn" class="text-red-400">Resetar progresso</button>
+    <div class="flex justify-between text-sm">
+      <button id="resetBtn" class="text-red-400 hover:underline">
+        Resetar progresso
+      </button>
+    </div>
 
   </div>
 
   <script type="module" src="firebase.js"></script>
+
+  <script type="module">
+    import { onAuthStateChanged, signOut } from
+      "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+    onAuthStateChanged(firebaseAuth, user => {
+      if (!user) location.href = 'login.html';
+    });
+
+    logoutBtn.onclick = async () => {
+      await signOut(firebaseAuth);
+      location.href = 'login.html';
+    };
+  </script>
+
+  <!-- SEU APP ORIGINAL, INTACTO -->
   <script src="app.js"></script>
 
 </body>
