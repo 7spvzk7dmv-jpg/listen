@@ -15,6 +15,11 @@
       <h1 class="text-xl font-semibold">English Trainer</h1>
 
       <div class="flex gap-2">
+        <button id="logoutBtn"
+          class="text-sm bg-red-600 px-3 py-1 rounded hover:bg-red-500">
+          Sair
+        </button>
+
         <button id="examModeBtn"
           class="text-sm bg-zinc-700 px-3 py-1 rounded hover:bg-zinc-600">
           📝 Modo exame: OFF
@@ -23,11 +28,6 @@
         <button id="toggleDataset"
           class="text-sm bg-zinc-700 px-3 py-1 rounded hover:bg-zinc-600">
           Dataset: frases
-        </button>
-
-        <button id="logoutBtn"
-          class="text-sm bg-red-600 px-3 py-1 rounded hover:bg-red-500">
-          Sair
         </button>
       </div>
     </header>
@@ -39,29 +39,45 @@
     </div>
 
     <div class="flex justify-center gap-3 flex-wrap">
-      <button id="playBtn" class="bg-zinc-700 px-4 py-2 rounded hover:bg-zinc-600">🔊 Ouvir</button>
-      <button id="micBtn" class="bg-zinc-700 px-4 py-2 rounded hover:bg-zinc-600">🎤 Falar</button>
-      <button id="translateBtn" class="bg-zinc-700 px-4 py-2 rounded hover:bg-zinc-600">🇧🇷 Tradução</button>
-      <button id="nextBtn" class="bg-zinc-700 px-4 py-2 rounded hover:bg-zinc-600">➡️ Próxima</button>
+      <button id="playBtn" class="bg-zinc-700 px-4 py-2 rounded-lg">🔊 Ouvir</button>
+      <button id="micBtn" class="bg-zinc-700 px-4 py-2 rounded-lg">🎤 Falar</button>
+      <button id="translateBtn" class="bg-zinc-700 px-4 py-2 rounded-lg">🇧🇷 Tradução</button>
+      <button id="nextBtn" class="bg-zinc-700 px-4 py-2 rounded-lg">➡️ Próxima</button>
     </div>
 
-    <div class="text-center text-sm space-y-1">
+    <div class="text-center text-sm">
       <p id="feedback"></p>
-      <p>
-        ✅ Acertos: <span id="hits">0</span> |
-        ❌ Erros: <span id="errors">0</span>
-      </p>
+      <p>✅ <span id="hits">0</span> | ❌ <span id="errors">0</span></p>
     </div>
 
-    <div class="flex justify-between text-sm">
-      <button id="resetBtn" class="text-red-400 hover:underline">
-        Resetar progresso
-      </button>
-    </div>
+    <button id="resetBtn" class="text-red-400 hover:underline">
+      Resetar progresso
+    </button>
 
   </div>
 
-  <!-- Firebase + App -->
-  <script type="module" src="app.js"></script>
+  <!-- Firebase -->
+  <script src="firebase.js" type="module"></script>
+
+  <!-- Auth guard + logout -->
+  <script type="module">
+    import { onAuthStateChanged, signOut }
+      from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+    const auth = window.firebaseAuth;
+
+    onAuthStateChanged(auth, user => {
+      if (!user) location.href = 'login.html';
+    });
+
+    logoutBtn.onclick = async () => {
+      await signOut(auth);
+      location.href = 'login.html';
+    };
+  </script>
+
+  <!-- SEU APP (inalterado) -->
+  <script src="app.js"></script>
+
 </body>
 </html>
