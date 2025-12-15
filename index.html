@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <title>English Pronunciation Trainer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -15,10 +13,16 @@
 
     <header class="flex justify-between items-center">
       <h1 class="text-xl font-semibold">English Trainer</h1>
-      <button id="toggleDataset"
-        class="text-sm bg-zinc-700 px-3 py-1 rounded hover:bg-zinc-600 transition">
-        Dataset: frases
-      </button>
+      <div class="flex gap-2">
+        <button id="examModeBtn"
+          class="text-sm bg-zinc-700 px-3 py-1 rounded hover:bg-zinc-600 transition">
+          📝 Modo exame: OFF
+        </button>
+        <button id="toggleDataset"
+          class="text-sm bg-zinc-700 px-3 py-1 rounded hover:bg-zinc-600 transition">
+          Dataset: frases
+        </button>
+      </div>
     </header>
 
     <div class="text-center space-y-3">
@@ -50,7 +54,6 @@
 
   </div>
 
-  <!-- JS no final -->
   <script src="app.js"></script>
 
 </body>
