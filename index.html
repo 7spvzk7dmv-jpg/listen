@@ -1,69 +1,65 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>English Trainer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>English Pronunciation Trainer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Firebase SDKs (SEM module – compatível Safari) -->
+  <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDHEzqBQ00kk3zACQU_tqJzvAVFM6erxks",
+      authDomain: "tca-listen-english.firebaseapp.com",
+      projectId: "tca-listen-english",
+      storageBucket: "tca-listen-english.firebasestorage.app",
+      messagingSenderId: "727416842890",
+      appId: "1:727416842890:web:89b1d0215b297a7563db73"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    window.auth = firebase.auth();
+    window.db = firebase.firestore();
+  </script>
 </head>
 
 <body class="bg-zinc-900 text-zinc-100 min-h-screen flex items-center justify-center px-4">
 
-<div class="w-full max-w-xl bg-zinc-800 rounded-2xl p-6 space-y-6">
+  <div class="w-full max-w-xl bg-zinc-800 rounded-2xl shadow-lg p-6 space-y-6">
 
-<header class="flex justify-between items-center">
-  <h1 class="text-xl font-semibold">English Trainer</h1>
-  <button id="logoutBtn"
-    class="text-sm bg-red-600 px-3 py-1 rounded">
-    Sair
-  </button>
-</header>
+    <header class="flex justify-between items-center">
+      <h1 class="text-xl font-semibold">English Trainer</h1>
+      <div class="flex gap-2">
+        <button id="examModeBtn"
+          class="text-sm bg-zinc-700 px-3 py-1 rounded hover:bg-zinc-600">
+          📝 Modo exame: OFF
+        </button>
+        <button id="logoutBtn"
+          class="text-sm bg-red-600 px-3 py-1 rounded hover:bg-red-500">
+          Sair
+        </button>
+      </div>
+    </header>
 
-<p id="englishText" class="text-2xl text-center"></p>
-<p id="translationText" class="text-center hidden text-zinc-400"></p>
-<p id="levelText" class="text-center text-sm"></p>
+    <div class="text-center space-y-3">
+      <p id="englishText" class="text-2xl font-medium"></p>
+      <p id="translationText" class="text-zinc-400 hidden"></p>
+      <p id="levelText" class="text-sm text-zinc-500"></p>
+    </div>
 
-<div class="flex justify-center gap-3 flex-wrap">
-  <button id="playBtn">🔊 Ouvir</button>
-  <button id="micBtn">🎤 Falar</button>
-  <button id="translateBtn">🇧🇷 Tradução</button>
-  <button id="nextBtn">➡️ Próxima</button>
-</div>
+    <div class="flex justify-center gap-3 flex-wrap">
+      <button id="playBtn" class="bg-zinc-700 px-4 py-2 rounded">🔊 Ouvir</button>
+      <button id="micBtn" class="bg-zinc-700 px-4 py-2 rounded">🎤 Falar</button>
+      <button id="translateBtn" class="bg-zinc-700 px-4 py-2 rounded">🇧🇷 Tradução</button>
+      <button id="nextBtn" class="bg-zinc-700 px-4 py-2 rounded">➡️ Próxima</button>
+    </div>
 
-<p id="feedback" class="text-center"></p>
-<p class="text-center text-sm">
-  ✅ <span id="hits">0</span> |
-  ❌ <span id="errors">0</span>
-</p>
-
-</div>
-
-<!-- Firebase GLOBAL (Safari-safe) -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDHEzqBQ00kk3zACQU_tqJzvAVFM6erxks",
-    authDomain: "tca-listen-english.firebaseapp.com",
-    projectId: "tca-listen-english"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  window.firebaseAuth = getAuth(app);
-  window.firebaseDb = getFirestore(app);
-
-  onAuthStateChanged(firebaseAuth, user => {
-    if (!user) location.href = 'login.html';
-  });
-
-  logoutBtn.onclick = async () => {
-    await signOut(firebaseAuth);
-    location.href = 'login.html';
-  };
-</script>
-
-<script src="app.js"></script>
-</body>
-</html>
+    <div class="text-center text-sm">
+      <p id="feedback"></p>
+      <p>
+        ✅ <span id="hits">0</span> |
