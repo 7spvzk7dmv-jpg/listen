@@ -7,17 +7,17 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-zinc-900 text-zinc-100 min-h-screen flex items-center justify-center px-4">
+<body class="bg-zinc-900 text-zinc-100 min-h-screen flex items-center justify-center">
 
-  <div class="w-full max-w-sm bg-zinc-800 rounded-2xl p-6 space-y-4">
+  <div class="w-full max-w-sm bg-zinc-800 rounded-xl p-6 space-y-4">
 
     <h1 class="text-xl font-semibold text-center">English Trainer</h1>
 
     <input id="email" type="email" placeholder="E-mail"
-      class="w-full p-2 rounded bg-zinc-700 outline-none" />
+      class="w-full p-2 rounded bg-zinc-700 outline-none">
 
     <input id="password" type="password" placeholder="Senha"
-      class="w-full p-2 rounded bg-zinc-700 outline-none" />
+      class="w-full p-2 rounded bg-zinc-700 outline-none">
 
     <button id="loginBtn"
       class="w-full bg-emerald-600 py-2 rounded hover:bg-emerald-500">
@@ -31,18 +31,18 @@
 
     <div class="flex items-center gap-2 my-2">
       <div class="flex-1 h-px bg-zinc-600"></div>
-      <span class="text-xs text-zinc-400">ou</span>
+      <span class="text-xs text-zinc-400">OU</span>
       <div class="flex-1 h-px bg-zinc-600"></div>
     </div>
 
     <button id="googleBtn"
-      class="w-full bg-white text-black py-2 rounded flex items-center justify-center gap-2 hover:bg-zinc-200">
+      class="w-full flex items-center justify-center gap-2 bg-white text-black py-2 rounded hover:bg-zinc-200">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-           alt="Google" class="w-5 h-5">
+           class="w-5 h-5">
       Entrar com Google
     </button>
 
-    <p id="msg" class="text-sm text-red-400 text-center"></p>
+    <p id="msg" class="text-sm text-center text-red-400"></p>
 
   </div>
 
@@ -55,15 +55,16 @@
       signInWithPopup
     } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
+    const auth = window.firebaseAuth;
+    const provider = window.googleProvider;
+
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
     const msg = document.getElementById('msg');
 
     loginBtn.onclick = async () => {
       try {
-        await signInWithEmailAndPassword(
-          firebaseAuth,
-          email.value,
-          password.value
-        );
+        await signInWithEmailAndPassword(auth, email.value, password.value);
         location.href = 'index.html';
       } catch (e) {
         msg.textContent = e.message;
@@ -72,11 +73,7 @@
 
     registerBtn.onclick = async () => {
       try {
-        await createUserWithEmailAndPassword(
-          firebaseAuth,
-          email.value,
-          password.value
-        );
+        await createUserWithEmailAndPassword(auth, email.value, password.value);
         location.href = 'index.html';
       } catch (e) {
         msg.textContent = e.message;
@@ -85,7 +82,7 @@
 
     googleBtn.onclick = async () => {
       try {
-        await signInWithPopup(firebaseAuth, googleProvider);
+        await signInWithPopup(auth, provider);
         location.href = 'index.html';
       } catch (e) {
         msg.textContent = e.message;
