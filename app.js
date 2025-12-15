@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadDataset();
 
   /* =======================
-     VOZ (TTS)
+     VOZ (TTS) — FIX ANDROID
   ======================= */
 
   function initVoices() {
@@ -63,10 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function pickVoice() {
       const voices = speechSynthesis.getVoices();
+      if (!voices.length) return;
+
       selectedVoice =
-        voices.find(v => preferred.includes(v.name) && v.lang.startsWith('en'))
-        || voices.find(v => v.lang === 'en-US')
-        || voices[0];
+        voices.find(v => preferred.includes(v.name) && v.lang.startsWith('en')) ||
+        voices.find(v => v.lang === 'en-US') ||
+        voices[0];
     }
 
     pickVoice();
@@ -77,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!text) return;
 
     speechSynthesis.cancel();
+    speechSynthesis.resume(); // 🔥 ESSENCIAL NO ANDROID
 
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-US';
@@ -130,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* =======================
-     PRONÚNCIA (STT)
+     PRONÚNCIA (STT) — FIX ANDROID
   ======================= */
 
   function normalize(text) {
@@ -169,20 +172,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function attachWordListeners() {
     document.querySelectorAll('[data-word]').forEach(el => {
-      el.addEventListener('click', () => {
-        speakWord(el.dataset.word);
-      });
+      el.addEventListener('click', () => speakWord(el.dataset.word));
     });
   }
 
   function listen() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR || !current) return;
+    const SR = window.webkitSpeechRecognition || window.SpeechRecognition;
+    if (!SR || !current) {
+      feedback.textContent = '❌ Reconhecimento não suportado';
+      return;
+    }
 
     const rec = new SR();
     rec.lang = 'en-US';
     rec.continuous = false;
     rec.interimResults = false;
+    rec.maxAlternatives = 1;
 
     rec.onstart = () => feedback.textContent = '🎙️ Ouvindo...';
 
