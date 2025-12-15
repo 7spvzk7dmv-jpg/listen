@@ -1,5 +1,24 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+
+  /* =======================
+            LOGOUT
+  ======================= */
+
+
+  const { onAuthStateChanged, signOut } =
+    window.firebaseAuth;
+
+  onAuthStateChanged(firebaseAuth, user => {
+    if (!user) location.href = 'login.html';
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await signOut(firebaseAuth);
+    location.href = 'login.html';
+  });
+
+  
   /* =======================
      CONFIGURAÇÃO GERAL
   ======================= */
