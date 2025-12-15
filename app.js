@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let data = [];
   let current = null;
 
+  let examMode = JSON.parse(localStorage.getItem('examMode')) || false;
+
   let stats = JSON.parse(localStorage.getItem('stats')) || {
     level: 'A1',
     hits: 0,
@@ -33,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const errorsEl = document.getElementById('errors');
   const levelText = document.getElementById('levelText');
   const toggleDatasetBtn = document.getElementById('toggleDataset');
+  const examModeBtn = document.getElementById('examModeBtn');
 
   /* =======================
      EVENTOS
@@ -44,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('nextBtn').onclick = nextSentence;
   document.getElementById('resetBtn').onclick = resetProgress;
   toggleDatasetBtn.onclick = toggleDataset;
+  examModeBtn.onclick = toggleExamMode;
 
   loadDataset();
 
@@ -78,7 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const filtered = data.filter(d => d.CEFR === stats.level);
     current = weightedRandom(filtered.length ? filtered : data);
 
-    englishText.textContent = current.ENG;
+    if (!examMode) {
+      englishText.textContent = current.ENG;
+    } else {
+      englishText.textContent = '🎧 Ouça e repita';
+    }
+
     translationText.textContent = current.PTBR;
     translationText.classList.add('hidden');
     feedback.textContent = '';
@@ -88,9 +97,9 @@ document.addEventListener('DOMContentLoaded', () => {
      ÁUDIO (TTS)
   ======================= */
 
-  function speak() {
+  function speak(textOverride) {
     if (!current) return;
-    const u = new SpeechSynthesisUtterance(current.ENG);
+    const u = new SpeechSynthesisUtterance(textOverride || current.ENG);
     u.lang = 'en-US';
     speechSynthesis.cancel();
     speechSynthesis.speak(u);
@@ -125,35 +134,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return t.map((w, i) => {
       const score = similarity(w, s[i] || '');
-      if (score >= 0.85) return `<span>${w}</span>`;
-      if (score >= 0.5)
-        return `<span class="text-yellow-400 underline">${w}</span>`;
-      return `<span class="text-red-400 underline">${w}</span>`;
+
+      if (score >= 0.85) {
+        return `<span>${w}</span>`;
+      }
+
+      const cls =
+        score >= 0.5
+          ? 'text-yellow-400 underline cursor-pointer'
+          : 'text-red-400 underline cursor-pointer';
+
+      return `<span class="${cls}" data-word="${w}">${w}</span>`;
     }).join(' ');
   }
 
-  /* =======================
-     LISTEN — CORRIGIDO (iOS)
-  ======================= */
+  function attachWordListeners() {
+    document.querySelectorAll('[data-word]').forEach(el => {
+      el.onclick = () => {
+        const word = el.dataset.word;
+        speak(word);
+      };
+    });
+  }
 
   function listen() {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      feedback.textContent = 'Reconhecimento de voz não suportado neste navegador.';
+      feedback.textContent = 'Reconhecimento de voz não suportado.';
       return;
     }
 
     const rec = new SpeechRecognition();
-
     rec.lang = 'en-US';
     rec.continuous = false;
     rec.interimResults = false;
     rec.maxAlternatives = 1;
 
     rec.onstart = () => {
-      feedback.textContent = '🎙️ Ouvindo... fale agora';
+      feedback.textContent = '🎙️ Ouvindo...';
     };
 
     rec.onerror = e => {
@@ -168,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const score = similarity(spoken, target);
 
       englishText.innerHTML = highlightDifferences(target, spoken);
+      attachWordListeners();
 
       if (score >= 0.75) {
         feedback.textContent = '✅ Boa pronúncia geral';
@@ -189,11 +210,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     rec.onend = () => {
       if (feedback.textContent.includes('Ouvindo')) {
-        feedback.textContent = '⚠️ Não detectei fala. Tente novamente.';
+        feedback.textContent = '⚠️ Nenhuma fala detectada.';
       }
     };
 
-    // ⚠️ CHAMADA DIRETA — OBRIGATÓRIO NO SAFARI iOS
     rec.start();
   }
 
@@ -222,6 +242,13 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDataset();
   }
 
+  function toggleExamMode() {
+    examMode = !examMode;
+    localStorage.setItem('examMode', JSON.stringify(examMode));
+    nextSentence();
+    updateUI();
+  }
+
   function resetProgress() {
     if (!confirm('Deseja apagar todo o progresso?')) return;
     localStorage.clear();
@@ -233,6 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
     errorsEl.textContent = stats.errors;
     levelText.textContent = `Nível atual: ${stats.level}`;
     toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
+    examModeBtn.textContent = examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
   }
 
   function saveStats() {
