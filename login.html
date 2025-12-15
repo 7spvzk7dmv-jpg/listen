@@ -1,64 +1,94 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Login — Listen English</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>Login – English Trainer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-zinc-900 text-zinc-100 min-h-screen flex items-center justify-center px-4">
+<body class="bg-zinc-900 text-zinc-100 min-h-screen flex items-center justify-center">
 
   <div class="bg-zinc-800 p-6 rounded-xl w-full max-w-sm space-y-4">
+    <h1 class="text-xl font-semibold text-center">English Trainer</h1>
 
-    <h1 class="text-xl font-semibold text-center">Listen English</h1>
+    <input id="email" type="email" placeholder="E-mail"
+      class="w-full p-2 rounded bg-zinc-700">
 
-    <button id="googleLogin"
-      class="w-full flex items-center justify-center gap-2 bg-white text-black py-2 rounded hover:bg-zinc-200 transition">
+    <input id="password" type="password" placeholder="Senha"
+      class="w-full p-2 rounded bg-zinc-700">
+
+    <button id="loginBtn"
+      class="w-full bg-emerald-600 py-2 rounded">
+      Entrar
+    </button>
+
+    <button id="registerBtn"
+      class="w-full bg-zinc-600 py-2 rounded">
+      Criar conta
+    </button>
+
+    <hr class="border-zinc-700">
+
+    <button id="googleBtn"
+      class="w-full bg-white text-black py-2 rounded flex items-center justify-center gap-2">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-           alt="Google" class="w-5 h-5">
+           class="w-5 h-5">
       Entrar com Google
     </button>
 
-    <p id="msg" class="text-center text-sm text-red-400"></p>
-
+    <p id="msg" class="text-sm text-red-400 text-center"></p>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-    import {
-      getAuth,
-      GoogleAuthProvider,
-      signInWithPopup,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import {
+    getAuth,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    GoogleAuthProvider,
+    signInWithPopup
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDHEzqBQ00kk3zACQU_tqJzvAVFM6erxks",
-      authDomain: "tca-listen-english.firebaseapp.com",
-      projectId: "tca-listen-english",
-      storageBucket: "tca-listen-english.firebasestorage.app",
-      messagingSenderId: "727416842890",
-      appId: "1:727416842890:web:89b1d0215b297a7563db73"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyDHEzqBQ00kk3zACQU_tqJzvAVFM6erxks",
+    authDomain: "tca-listen-english.firebaseapp.com",
+    projectId: "tca-listen-english"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
 
-    googleLogin.onclick = async () => {
-      try {
-        await signInWithPopup(auth, provider);
-        location.href = 'index.html';
-      } catch (e) {
-        msg.textContent = e.message;
-      }
-    };
+  const msg = document.getElementById('msg');
 
-    onAuthStateChanged(auth, user => {
-      if (user) location.href = 'index.html';
-    });
-  </script>
+  loginBtn.onclick = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, email.value, password.value);
+      location.href = 'index.html';
+    } catch (e) {
+      msg.textContent = e.message;
+    }
+  };
+
+  registerBtn.onclick = async () => {
+    try {
+      await createUserWithEmailAndPassword(auth, email.value, password.value);
+      location.href = 'index.html';
+    } catch (e) {
+      msg.textContent = e.message;
+    }
+  };
+
+  googleBtn.onclick = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      location.href = 'index.html';
+    } catch (e) {
+      msg.textContent = e.message;
+    }
+  };
+</script>
 
 </body>
 </html>
