@@ -24,54 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     weights: {}
   };
 
-  /* =======================
-     VOZ / TTS
-  ======================= */
-
-  let voices = [];
   let selectedVoice = null;
-  let voicesReady = false;
-
-  function loadVoices() {
-    voices = speechSynthesis.getVoices();
-
-    if (!voices.length) return;
-
-    // Prioridade de escolha
-    selectedVoice =
-      voices.find(v => v.lang === 'en-US' && /neural|enhanced/i.test(v.name)) ||
-      voices.find(v => v.lang === 'en-US' && /Samantha|Aaron/i.test(v.name)) ||
-      voices.find(v => v.lang === 'en-US') ||
-      voices[0];
-
-    voicesReady = true;
-  }
-
-  speechSynthesis.onvoiceschanged = loadVoices;
-  loadVoices();
-
-  function speakText(text) {
-    if (!text) return;
-
-    // Safari iOS bug guard
-    if (!voicesReady) {
-      setTimeout(() => speakText(text), 150);
-      return;
-    }
-
-    speechSynthesis.cancel();
-
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US';
-    u.voice = selectedVoice;
-
-    // Ajustes de naturalidade
-    u.rate = 0.95;
-    u.pitch = 1.0;
-    u.volume = 1;
-
-    speechSynthesis.speak(u);
-  }
 
   /* =======================
      ELEMENTOS DO DOM
@@ -90,18 +43,61 @@ document.addEventListener('DOMContentLoaded', () => {
      EVENTOS
   ======================= */
 
-  document.getElementById('playBtn').onclick = () => {
-    if (current) speakText(current.ENG);
-  };
+  document.getElementById('playBtn').addEventListener('click', () => {
+    speakSentence();
+  });
 
-  document.getElementById('micBtn').onclick = listen;
-  document.getElementById('translateBtn').onclick = toggleTranslation;
-  document.getElementById('nextBtn').onclick = nextSentence;
-  document.getElementById('resetBtn').onclick = resetProgress;
-  toggleDatasetBtn.onclick = toggleDataset;
-  examModeBtn.onclick = toggleExamMode;
+  document.getElementById('micBtn').addEventListener('click', listen);
+  document.getElementById('translateBtn').addEventListener('click', toggleTranslation);
+  document.getElementById('nextBtn').addEventListener('click', nextSentence);
+  document.getElementById('resetBtn').addEventListener('click', resetProgress);
+  toggleDatasetBtn.addEventListener('click', toggleDataset);
+  examModeBtn.addEventListener('click', toggleExamMode);
 
+  initVoices();
   loadDataset();
+
+  /* =======================
+     VOZ (TTS)
+  ======================= */
+
+  function initVoices() {
+    const preferred = ['Samantha', 'Daniel', 'Aaron'];
+
+    function pickVoice() {
+      const voices = speechSynthesis.getVoices();
+      selectedVoice =
+        voices.find(v => preferred.includes(v.name) && v.lang.startsWith('en'))
+        || voices.find(v => v.lang === 'en-US')
+        || voices[0];
+    }
+
+    pickVoice();
+    speechSynthesis.onvoiceschanged = pickVoice;
+  }
+
+  function speakText(text) {
+    if (!text) return;
+
+    speechSynthesis.cancel();
+
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    if (selectedVoice) u.voice = selectedVoice;
+    u.rate = 0.95;
+    u.pitch = 1.0;
+
+    speechSynthesis.speak(u);
+  }
+
+  function speakSentence() {
+    if (!current) return;
+    speakText(current.ENG);
+  }
+
+  function speakWord(word) {
+    speakText(word);
+  }
 
   /* =======================
      DATASET
@@ -176,7 +172,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function attachWordListeners() {
     document.querySelectorAll('[data-word]').forEach(el => {
-      el.onclick = () => speakText(el.dataset.word);
+      el.addEventListener('click', () => {
+        speakWord(el.dataset.word);
+      });
     });
   }
 
@@ -189,9 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
     rec.continuous = false;
     rec.interimResults = false;
 
-    rec.onstart = () => {
-      feedback.textContent = '🎙️ Ouvindo...';
-    };
+    rec.onstart = () => feedback.textContent = '🎙️ Ouvindo...';
 
     rec.onresult = e => {
       const spoken = normalize(e.results[0][0].transcript);
@@ -214,14 +210,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     rec.onerror = () => {
-      feedback.textContent = '⚠️ Erro no microfone';
+      feedback.textContent = '⚠️ Erro no reconhecimento de voz';
     };
 
     rec.start();
   }
 
   /* =======================
-     UI / ESTADO
+     UI
   ======================= */
 
   function toggleTranslation() {
@@ -242,6 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function resetProgress() {
+    if (!confirm('Deseja apagar todo o progresso?')) return;
     localStorage.clear();
     location.reload();
   }
