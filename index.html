@@ -13,18 +13,21 @@
 
     <header class="flex justify-between items-center">
       <h1 class="text-xl font-semibold">English Trainer</h1>
+
       <div class="flex gap-2">
+        <button id="logoutBtn"
+          class="text-sm bg-red-600 px-3 py-1 rounded hover:bg-red-500">
+          Sair
+        </button>
+
         <button id="examModeBtn"
           class="text-sm bg-zinc-700 px-3 py-1 rounded hover:bg-zinc-600">
           📝 Modo exame: OFF
         </button>
+
         <button id="toggleDataset"
           class="text-sm bg-zinc-700 px-3 py-1 rounded hover:bg-zinc-600">
           Dataset: frases
-        </button>
-        <button id="logoutBtn"
-          class="text-sm bg-red-600 px-3 py-1 rounded hover:bg-red-500">
-          Sair
         </button>
       </div>
     </header>
@@ -42,39 +45,39 @@
       <button id="nextBtn" class="bg-zinc-700 px-4 py-2 rounded-lg">➡️ Próxima</button>
     </div>
 
-    <div class="text-center text-sm space-y-1">
+    <div class="text-center text-sm">
       <p id="feedback"></p>
-      <p>
-        ✅ Acertos: <span id="hits">0</span> |
-        ❌ Erros: <span id="errors">0</span>
-      </p>
+      <p>✅ <span id="hits">0</span> | ❌ <span id="errors">0</span></p>
     </div>
 
-    <div class="flex justify-between text-sm">
-      <button id="resetBtn" class="text-red-400 hover:underline">
-        Resetar progresso
-      </button>
-    </div>
+    <button id="resetBtn" class="text-red-400 hover:underline">
+      Resetar progresso
+    </button>
 
   </div>
 
+  <!-- Firebase base -->
   <script type="module" src="firebase.js"></script>
 
+  <!-- Auth guard -->
   <script type="module">
-    import { onAuthStateChanged, signOut } from
-      "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+    import { onAuthStateChanged, signOut }
+      from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-    onAuthStateChanged(firebaseAuth, user => {
+    const auth = window.firebaseAuth;
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    onAuthStateChanged(auth, user => {
       if (!user) location.href = 'login.html';
     });
 
-    logoutBtn.onclick = async () => {
-      await signOut(firebaseAuth);
+    logoutBtn.addEventListener('click', async () => {
+      await signOut(auth);
       location.href = 'login.html';
-    };
+    });
   </script>
 
-  <!-- SEU APP ORIGINAL, INTACTO -->
+  <!-- App -->
   <script src="app.js"></script>
 
 </body>
