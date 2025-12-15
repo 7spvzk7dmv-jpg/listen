@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Listen English</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>English Pronunciation Trainer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -11,34 +11,82 @@
 
   <div class="w-full max-w-xl bg-zinc-800 rounded-2xl shadow-lg p-6 space-y-6">
 
+    <!-- HEADER -->
     <header class="flex justify-between items-center">
-      <h1 class="text-xl font-semibold">Listen English</h1>
-      <button id="logoutBtn"
-        class="text-sm bg-red-600 px-3 py-1 rounded hover:bg-red-500">
-        Logout
-      </button>
+      <h1 class="text-xl font-semibold">English Trainer</h1>
+      <div class="flex gap-2">
+        <button id="examModeBtn"
+          class="text-sm bg-zinc-700 px-3 py-1 rounded hover:bg-zinc-600">
+          📝 Modo exame: OFF
+        </button>
+        <button id="logoutBtn"
+          class="text-sm bg-red-600 px-3 py-1 rounded hover:bg-red-500">
+          Logout
+        </button>
+      </div>
     </header>
 
+    <!-- TEXTO -->
     <div class="text-center space-y-3">
-      <p id="englishText" class="text-2xl font-medium"></p>
+      <p id="englishText" class="text-2xl font-medium leading-relaxed"></p>
       <p id="translationText" class="text-zinc-400 hidden"></p>
       <p id="levelText" class="text-sm text-zinc-500"></p>
     </div>
 
+    <!-- CONTROLES -->
     <div class="flex justify-center gap-3 flex-wrap">
-      <button id="playBtn" class="bg-zinc-700 px-4 py-2 rounded">🔊 Ouvir</button>
-      <button id="micBtn" class="bg-zinc-700 px-4 py-2 rounded">🎤 Falar</button>
-      <button id="translateBtn" class="bg-zinc-700 px-4 py-2 rounded">🇧🇷 Tradução</button>
-      <button id="nextBtn" class="bg-zinc-700 px-4 py-2 rounded">➡️ Próxima</button>
+      <button id="playBtn" class="bg-zinc-700 px-4 py-2 rounded-lg">🔊 Ouvir</button>
+      <button id="micBtn" class="bg-zinc-700 px-4 py-2 rounded-lg">🎤 Falar</button>
+      <button id="translateBtn" class="bg-zinc-700 px-4 py-2 rounded-lg">🇧🇷 Tradução</button>
+      <button id="nextBtn" class="bg-zinc-700 px-4 py-2 rounded-lg">➡️ Próxima</button>
     </div>
 
-    <div class="text-center text-sm">
+    <!-- FEEDBACK -->
+    <div class="text-center text-sm space-y-1">
       <p id="feedback"></p>
-      <p>✅ <span id="hits">0</span> | ❌ <span id="errors">0</span></p>
+      <p>
+        ✅ Acertos: <span id="hits">0</span> |
+        ❌ Erros: <span id="errors">0</span>
+      </p>
     </div>
 
   </div>
 
-<script type="module" src="app.js"></script>
+  <!-- FIREBASE -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+    import {
+      getFirestore
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDHEzqBQ00kk3zACQU_tqJzvAVFM6erxks",
+      authDomain: "tca-listen-english.firebaseapp.com",
+      projectId: "tca-listen-english",
+      storageBucket: "tca-listen-english.firebasestorage.app",
+      messagingSenderId: "727416842890",
+      appId: "1:727416842890:web:89b1d0215b297a7563db73"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    window.auth = getAuth(app);
+    window.db = getFirestore(app);
+
+    document.getElementById('logoutBtn').onclick = async () => {
+      await signOut(auth);
+      location.href = 'login.html';
+    };
+
+    onAuthStateChanged(auth, user => {
+      if (!user) location.href = 'login.html';
+    });
+  </script>
+
+  <script src="app.js"></script>
 </body>
 </html>
