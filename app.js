@@ -1,34 +1,11 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import {
-  getAuth,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc
-} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-
 document.addEventListener('DOMContentLoaded', () => {
 
   /* =======================
-     FIREBASE
+     FIREBASE (já carregado no HTML)
   ======================= */
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDHEzqBQ00kk3zACQU_tqJzvAVFM6erxks",
-    authDomain: "tca-listen-english.firebaseapp.com",
-    projectId: "tca-listen-english",
-    storageBucket: "tca-listen-english.firebasestorage.app",
-    messagingSenderId: "727416842890",
-    appId: "1:727416842890:web:89b1d0215b297a7563db73"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+  const auth = window.firebaseAuth;
+  const db = window.firebaseDb;
 
   /* =======================
      CONFIGURAÇÃO GERAL
@@ -41,13 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const levels = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
-  let user = null;
+  let datasetKey = 'frases';
   let data = [];
   let current = null;
-  let selectedVoice = null;
-
-  let datasetKey = 'frases';
   let examMode = false;
+  let selectedVoice = null;
+  let userRef = null;
 
   let stats = {
     level: 'A1',
@@ -68,30 +44,33 @@ document.addEventListener('DOMContentLoaded', () => {
   const levelText = document.getElementById('levelText');
   const toggleDatasetBtn = document.getElementById('toggleDataset');
   const examModeBtn = document.getElementById('examModeBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
+  const playBtn = document.getElementById('playBtn');
+  const micBtn = document.getElementById('micBtn');
+  const translateBtn = document.getElementById('translateBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const resetBtn = document.getElementById('resetBtn');
 
   /* =======================
-     AUTENTICAÇÃO
+     AUTENTICAÇÃO (OBRIGATÓRIA)
   ======================= */
 
-  onAuthStateChanged(auth, async u => {
-    if (!u) {
+  auth.onAuthStateChanged(async user => {
+    if (!user) {
       location.href = 'login.html';
       return;
     }
 
-    user = u;
+    userRef = firebase.firestore.doc(db, 'users', user.uid);
 
-    const ref = doc(db, 'users', user.uid);
-    const snap = await getDoc(ref);
+    const snap = await firebase.firestore.getDoc(userRef);
 
     if (snap.exists()) {
       const d = snap.data();
       stats = d.stats || stats;
       datasetKey = d.dataset || datasetKey;
-      examMode = d.examMode || examMode;
+      examMode = d.examMode || false;
     } else {
-      await setDoc(ref, {
+      await firebase.firestore.setDoc(userRef, {
         email: user.email,
         stats,
         dataset: datasetKey,
@@ -104,34 +83,29 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI();
   });
 
-  logoutBtn.onclick = async () => {
-    await signOut(auth);
-    location.href = 'login.html';
-  };
-
   /* =======================
      EVENTOS
   ======================= */
 
-  document.getElementById('playBtn').onclick = () => speakText(current?.ENG);
-  document.getElementById('micBtn').onclick = listen;
-  document.getElementById('translateBtn').onclick = toggleTranslation;
-  document.getElementById('nextBtn').onclick = nextSentence;
-  document.getElementById('resetBtn').onclick = resetProgress;
+  playBtn.onclick = () => speakText(current?.ENG);
+  micBtn.onclick = listen;
+  translateBtn.onclick = () => translationText.classList.toggle('hidden');
+  nextBtn.onclick = nextSentence;
+  resetBtn.onclick = resetProgress;
   toggleDatasetBtn.onclick = toggleDataset;
   examModeBtn.onclick = toggleExamMode;
 
   /* =======================
-     VOZ (TTS)
+     VOZ (TTS – Chrome / Android OK)
   ======================= */
 
   function initVoices() {
-    const preferred = ['Samantha', 'Daniel', 'Aaron'];
+    const preferred = ['Google US English', 'Samantha', 'Daniel'];
 
     function pick() {
       const voices = speechSynthesis.getVoices();
       selectedVoice =
-        voices.find(v => preferred.includes(v.name) && v.lang.startsWith('en'))
+        voices.find(v => preferred.includes(v.name))
         || voices.find(v => v.lang === 'en-US')
         || voices[0];
     }
@@ -142,8 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function speakText(text) {
     if (!text) return;
-
     speechSynthesis.cancel();
+
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-US';
     if (selectedVoice) u.voice = selectedVoice;
@@ -184,8 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
      PRONÚNCIA (STT)
   ======================= */
 
-  function normalize(text) {
-    return text.toLowerCase().replace(/[^a-z']/g, ' ').replace(/\s+/g, ' ').trim();
+  function normalize(t) {
+    return t.toLowerCase().replace(/[^a-z']/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
   function similarity(a, b) {
@@ -196,20 +170,14 @@ document.addEventListener('DOMContentLoaded', () => {
     return same / Math.max(a.length, b.length);
   }
 
-  function adjustLevel(success) {
-    let i = levels.indexOf(stats.level);
-    if (success && i < levels.length - 1) i++;
-    if (!success && i > 0) i--;
-    stats.level = levels[i];
-  }
-
   function highlightDifferences(target, spoken) {
     const t = target.split(' ');
     const s = spoken.split(' ');
+
     return t.map((w, i) => {
-      const sc = similarity(w, s[i] || '');
-      if (sc >= 0.85) return `<span>${w}</span>`;
-      const cls = sc >= 0.5
+      const score = similarity(w, s[i] || '');
+      if (score >= 0.85) return `<span>${w}</span>`;
+      const cls = score >= 0.5
         ? 'text-yellow-400 underline cursor-pointer'
         : 'text-red-400 underline cursor-pointer';
       return `<span class="${cls}" data-word="${w}">${w}</span>`;
@@ -223,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rec = new SR();
     rec.lang = 'en-US';
 
-    rec.onresult = async e => {
+    rec.onresult = e => {
       const spoken = normalize(e.results[0][0].transcript);
       const target = normalize(current.ENG);
       const score = similarity(spoken, target);
@@ -243,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         adjustLevel(false);
       }
 
-      await saveUserData();
+      saveProgress();
       updateUI();
     };
 
@@ -251,31 +219,31 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* =======================
+     PROGRESSÃO CEFR (CORRIGIDA)
+  ======================= */
+
+  function adjustLevel(success) {
+    let i = levels.indexOf(stats.level);
+    if (success && i < levels.length - 1) i++;
+    if (!success && i > 0) i--;
+    stats.level = levels[i];
+  }
+
+  /* =======================
      UI / ESTADO
   ======================= */
 
-  function toggleTranslation() {
-    translationText.classList.toggle('hidden');
-  }
-
   function toggleDataset() {
     datasetKey = datasetKey === 'frases' ? 'palavras' : 'frases';
-    saveUserData();
     loadDataset();
+    saveProgress();
   }
 
   function toggleExamMode() {
     examMode = !examMode;
-    saveUserData();
     nextSentence();
+    saveProgress();
     updateUI();
-  }
-
-  function resetProgress() {
-    if (!confirm('Deseja apagar todo o progresso?')) return;
-    stats = { level: 'A1', hits: 0, errors: 0, weights: {} };
-    saveUserData();
-    location.reload();
   }
 
   function updateUI() {
@@ -286,9 +254,17 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
   }
 
-  async function saveUserData() {
-    if (!user) return;
-    await setDoc(doc(db, 'users', user.uid), {
+  function resetProgress() {
+    if (!confirm('Deseja apagar todo o progresso?')) return;
+    stats = { level: 'A1', hits: 0, errors: 0, weights: {} };
+    saveProgress();
+    nextSentence();
+    updateUI();
+  }
+
+  async function saveProgress() {
+    if (!userRef) return;
+    await firebase.firestore.setDoc(userRef, {
       stats,
       dataset: datasetKey,
       examMode
