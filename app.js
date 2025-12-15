@@ -25,6 +25,55 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /* =======================
+     VOZ / TTS
+  ======================= */
+
+  let voices = [];
+  let selectedVoice = null;
+  let voicesReady = false;
+
+  function loadVoices() {
+    voices = speechSynthesis.getVoices();
+
+    if (!voices.length) return;
+
+    // Prioridade de escolha
+    selectedVoice =
+      voices.find(v => v.lang === 'en-US' && /neural|enhanced/i.test(v.name)) ||
+      voices.find(v => v.lang === 'en-US' && /Samantha|Aaron/i.test(v.name)) ||
+      voices.find(v => v.lang === 'en-US') ||
+      voices[0];
+
+    voicesReady = true;
+  }
+
+  speechSynthesis.onvoiceschanged = loadVoices;
+  loadVoices();
+
+  function speakText(text) {
+    if (!text) return;
+
+    // Safari iOS bug guard
+    if (!voicesReady) {
+      setTimeout(() => speakText(text), 150);
+      return;
+    }
+
+    speechSynthesis.cancel();
+
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.voice = selectedVoice;
+
+    // Ajustes de naturalidade
+    u.rate = 0.95;
+    u.pitch = 1.0;
+    u.volume = 1;
+
+    speechSynthesis.speak(u);
+  }
+
+  /* =======================
      ELEMENTOS DO DOM
   ======================= */
 
@@ -41,7 +90,10 @@ document.addEventListener('DOMContentLoaded', () => {
      EVENTOS
   ======================= */
 
-  document.getElementById('playBtn').onclick = speakSentence;
+  document.getElementById('playBtn').onclick = () => {
+    if (current) speakText(current.ENG);
+  };
+
   document.getElementById('micBtn').onclick = listen;
   document.getElementById('translateBtn').onclick = toggleTranslation;
   document.getElementById('nextBtn').onclick = nextSentence;
@@ -85,26 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* =======================
-     ÁUDIO (TTS)
-  ======================= */
-
-  function speakSentence() {
-    if (!current) return;
-    speakText(current.ENG);
-  }
-
-  function speakWord(word) {
-    speakText(word);
-  }
-
-  function speakText(text) {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US';
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  }
-
-  /* =======================
      PRONÚNCIA (STT)
   ======================= */
 
@@ -130,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return t.map((w, i) => {
       const score = similarity(w, s[i] || '');
+
       if (score >= 0.85) return `<span>${w}</span>`;
 
       const cls =
@@ -143,16 +176,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function attachWordListeners() {
     document.querySelectorAll('[data-word]').forEach(el => {
-      el.onclick = () => speakWord(el.dataset.word);
+      el.onclick = () => speakText(el.dataset.word);
     });
   }
 
   function listen() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
+    if (!SR || !current) return;
 
     const rec = new SR();
     rec.lang = 'en-US';
+    rec.continuous = false;
+    rec.interimResults = false;
+
+    rec.onstart = () => {
+      feedback.textContent = '🎙️ Ouvindo...';
+    };
 
     rec.onresult = e => {
       const spoken = normalize(e.results[0][0].transcript);
@@ -174,11 +213,15 @@ document.addEventListener('DOMContentLoaded', () => {
       updateUI();
     };
 
+    rec.onerror = () => {
+      feedback.textContent = '⚠️ Erro no microfone';
+    };
+
     rec.start();
   }
 
   /* =======================
-     UI
+     UI / ESTADO
   ======================= */
 
   function toggleTranslation() {
