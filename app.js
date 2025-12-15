@@ -1,105 +1,161 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import {
-  getAuth,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc
-} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+document.addEventListener('DOMContentLoaded', () => {
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDHEzqBQ00kk3zACQU_tqJzvAVFM6erxks",
-  authDomain: "tca-listen-english.firebaseapp.com",
-  projectId: "tca-listen-english",
-  storageBucket: "tca-listen-english.firebasestorage.app",
-  messagingSenderId: "727416842890",
-  appId: "1:727416842890:web:89b1d0215b297a7563db73"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-const englishText = document.getElementById('englishText');
-const translationText = document.getElementById('translationText');
-const feedback = document.getElementById('feedback');
-const hitsEl = document.getElementById('hits');
-const errorsEl = document.getElementById('errors');
-const levelText = document.getElementById('levelText');
-
-let stats = { level: 'A1', hits: 0, errors: 0 };
-let current = null;
-let data = [];
-
-onAuthStateChanged(auth, async user => {
-  if (!user) {
-    location.href = 'login.html';
-    return;
-  }
-
-  document.getElementById('logoutBtn').onclick = async () => {
-    await signOut(auth);
-    location.href = 'login.html';
+  const DATASETS = {
+    frases: 'data/frases.json',
+    palavras: 'data/palavras.json'
   };
 
-  const ref = doc(db, 'users', user.uid);
-  const snap = await getDoc(ref);
+  const levels = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
-  if (snap.exists()) {
-    stats = snap.data().stats;
-  } else {
-    await setDoc(ref, { stats });
-  }
+  let datasetKey = 'frases';
+  let data = [];
+  let current = null;
+  let examMode = false;
 
-  loadData();
-});
+  let stats = {
+    level: 'A1',
+    hits: 0,
+    errors: 0,
+    weights: {}
+  };
 
-async function loadData() {
-  const res = await fetch('data/frases.json');
-  data = await res.json();
-  next();
-  updateUI();
-}
+  const englishText = document.getElementById('englishText');
+  const translationText = document.getElementById('translationText');
+  const feedback = document.getElementById('feedback');
+  const hitsEl = document.getElementById('hits');
+  const errorsEl = document.getElementById('errors');
+  const levelText = document.getElementById('levelText');
+  const examModeBtn = document.getElementById('examModeBtn');
 
-function next() {
-  current = data.find(d => d.CEFR === stats.level) || data[0];
-  englishText.textContent = current.ENG;
-  translationText.textContent = current.PTBR;
-  translationText.classList.add('hidden');
-}
+  document.getElementById('playBtn').onclick = () => speak(current.ENG);
+  document.getElementById('micBtn').onclick = listen;
+  document.getElementById('translateBtn').onclick = () => translationText.classList.toggle('hidden');
+  document.getElementById('nextBtn').onclick = nextSentence;
+  examModeBtn.onclick = toggleExamMode;
 
-document.getElementById('playBtn').onclick = () => {
-  const u = new SpeechSynthesisUtterance(current.ENG);
-  u.lang = 'en-US';
-  speechSynthesis.cancel();
-  speechSynthesis.speak(u);
-};
+  /* ========= FIREBASE LOAD ========= */
 
-document.getElementById('micBtn').onclick = () => {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return;
-  const rec = new SR();
-  rec.lang = 'en-US';
-  rec.onresult = async e => {
-    const ok = e.results[0][0].confidence > 0.7;
-    ok ? stats.hits++ : stats.errors++;
-    await setDoc(doc(db, 'users', auth.currentUser.uid), { stats });
+  auth.onAuthStateChanged(async user => {
+    if (!user) return;
+
+    const { doc, getDoc, setDoc } = await import(
+      "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js"
+    );
+
+    const ref = doc(db, 'users', user.uid);
+    const snap = await getDoc(ref);
+
+    if (snap.exists()) {
+      ({ stats, datasetKey, examMode } = snap.data());
+    } else {
+      await setDoc(ref, { stats, datasetKey, examMode });
+    }
+
+    loadDataset();
     updateUI();
-  };
-  rec.start();
-};
+  });
 
-document.getElementById('translateBtn').onclick = () =>
-  translationText.classList.toggle('hidden');
+  async function saveStats() {
+    const { doc, setDoc } = await import(
+      "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js"
+    );
 
-document.getElementById('nextBtn').onclick = next;
+    await setDoc(
+      doc(db, 'users', auth.currentUser.uid),
+      { stats, datasetKey, examMode },
+      { merge: true }
+    );
+  }
 
-function updateUI() {
-  hitsEl.textContent = stats.hits;
-  errorsEl.textContent = stats.errors;
-  levelText.textContent = `Nível: ${stats.level}`;
-}
+  /* ========= DATASET ========= */
+
+  async function loadDataset() {
+    const res = await fetch(DATASETS[datasetKey]);
+    data = await res.json();
+    nextSentence();
+  }
+
+  function nextSentence() {
+    const pool = data.filter(d => d.CEFR === stats.level);
+    current = pool[Math.floor(Math.random() * pool.length)] || data[0];
+
+    englishText.textContent = examMode ? '🎧 Ouça e repita' : current.ENG;
+    translationText.textContent = current.PTBR;
+    translationText.classList.add('hidden');
+    feedback.textContent = '';
+  }
+
+  /* ========= TTS ========= */
+
+  function speak(text) {
+    if (!text) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = 0.95;
+    speechSynthesis.speak(u);
+  }
+
+  /* ========= STT + PROGRESSÃO ========= */
+
+  function listen() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+
+    const rec = new SR();
+    rec.lang = 'en-US';
+
+    rec.onresult = e => {
+      const spoken = normalize(e.results[0][0].transcript);
+      const target = normalize(current.ENG);
+      const score = similarity(spoken, target);
+
+      if (score >= 0.75) {
+        stats.hits++;
+        advanceLevel(true);
+        feedback.textContent = '✅ Boa pronúncia';
+      } else {
+        stats.errors++;
+        advanceLevel(false);
+        feedback.textContent = '❌ Atenção';
+      }
+
+      saveStats();
+      updateUI();
+    };
+
+    rec.start();
+  }
+
+  function advanceLevel(success) {
+    let i = levels.indexOf(stats.level);
+    if (success && i < levels.length - 1) i++;
+    if (!success && i > 0) i--;
+    stats.level = levels[i];
+  }
+
+  function normalize(t) {
+    return t.toLowerCase().replace(/[^a-z']/g, ' ').trim();
+  }
+
+  function similarity(a, b) {
+    let same = 0;
+    for (let i = 0; i < Math.min(a.length, b.length); i++)
+      if (a[i] === b[i]) same++;
+    return same / Math.max(a.length, b.length);
+  }
+
+  function toggleExamMode() {
+    examMode = !examMode;
+    examModeBtn.textContent = examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
+    nextSentence();
+    saveStats();
+  }
+
+  function updateUI() {
+    hitsEl.textContent = stats.hits;
+    errorsEl.textContent = stats.errors;
+    levelText.textContent = `Nível atual: ${stats.level}`;
+  }
+
+});
