@@ -1,11 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
 
   /* =======================
-     FIREBASE (já carregado no HTML)
+     FIREBASE (já inicializado no HTML)
   ======================= */
 
   const auth = window.firebaseAuth;
   const db = window.firebaseDb;
+
+  const { onAuthStateChanged } = auth;
+  const { doc, getDoc, setDoc } = window.firebaseFirestore;
 
   /* =======================
      CONFIGURAÇÃO GERAL
@@ -22,8 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let data = [];
   let current = null;
   let examMode = false;
-  let selectedVoice = null;
-  let userRef = null;
+  let user = null;
 
   let stats = {
     level: 'A1',
@@ -31,6 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
     errors: 0,
     weights: {}
   };
+
+  let selectedVoice = null;
 
   /* =======================
      ELEMENTOS DO DOM
@@ -44,33 +48,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const levelText = document.getElementById('levelText');
   const toggleDatasetBtn = document.getElementById('toggleDataset');
   const examModeBtn = document.getElementById('examModeBtn');
-  const playBtn = document.getElementById('playBtn');
-  const micBtn = document.getElementById('micBtn');
-  const translateBtn = document.getElementById('translateBtn');
-  const nextBtn = document.getElementById('nextBtn');
-  const resetBtn = document.getElementById('resetBtn');
 
   /* =======================
-     AUTENTICAÇÃO (OBRIGATÓRIA)
+     PROTEÇÃO POR LOGIN
   ======================= */
 
-  auth.onAuthStateChanged(async user => {
-    if (!user) {
+  onAuthStateChanged(auth, async u => {
+    if (!u) {
       location.href = 'login.html';
       return;
     }
 
-    userRef = firebase.firestore.doc(db, 'users', user.uid);
+    user = u;
 
-    const snap = await firebase.firestore.getDoc(userRef);
+    const ref = doc(db, 'users', user.uid);
+    const snap = await getDoc(ref);
 
     if (snap.exists()) {
-      const d = snap.data();
-      stats = d.stats || stats;
-      datasetKey = d.dataset || datasetKey;
-      examMode = d.examMode || false;
+      const saved = snap.data();
+      stats = saved.stats || stats;
+      datasetKey = saved.dataset || datasetKey;
+      examMode = saved.examMode || false;
     } else {
-      await firebase.firestore.setDoc(userRef, {
+      await setDoc(ref, {
         email: user.email,
         stats,
         dataset: datasetKey,
@@ -87,27 +87,27 @@ document.addEventListener('DOMContentLoaded', () => {
      EVENTOS
   ======================= */
 
-  playBtn.onclick = () => speakText(current?.ENG);
-  micBtn.onclick = listen;
-  translateBtn.onclick = () => translationText.classList.toggle('hidden');
-  nextBtn.onclick = nextSentence;
-  resetBtn.onclick = resetProgress;
+  document.getElementById('playBtn').onclick = speakSentence;
+  document.getElementById('micBtn').onclick = listen;
+  document.getElementById('translateBtn').onclick = toggleTranslation;
+  document.getElementById('nextBtn').onclick = nextSentence;
+  document.getElementById('resetBtn').onclick = resetProgress;
   toggleDatasetBtn.onclick = toggleDataset;
   examModeBtn.onclick = toggleExamMode;
 
   /* =======================
-     VOZ (TTS – Chrome / Android OK)
+     VOZ (TTS)
   ======================= */
 
   function initVoices() {
-    const preferred = ['Google US English', 'Samantha', 'Daniel'];
+    const preferred = ['Samantha', 'Daniel', 'Aaron'];
 
     function pick() {
       const voices = speechSynthesis.getVoices();
       selectedVoice =
-        voices.find(v => preferred.includes(v.name))
-        || voices.find(v => v.lang === 'en-US')
-        || voices[0];
+        voices.find(v => preferred.includes(v.name) && v.lang.startsWith('en')) ||
+        voices.find(v => v.lang === 'en-US') ||
+        voices[0];
     }
 
     pick();
@@ -117,7 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function speakText(text) {
     if (!text) return;
     speechSynthesis.cancel();
-
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-US';
     if (selectedVoice) u.voice = selectedVoice;
@@ -125,8 +124,16 @@ document.addEventListener('DOMContentLoaded', () => {
     speechSynthesis.speak(u);
   }
 
+  function speakSentence() {
+    if (current) speakText(current.ENG);
+  }
+
+  function speakWord(word) {
+    speakText(word);
+  }
+
   /* =======================
-     DATASET
+     DATASET / NÍVEIS
   ======================= */
 
   async function loadDataset() {
@@ -137,16 +144,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function weightedRandom(items) {
     const pool = [];
-    items.forEach(item => {
-      const w = stats.weights[item.ENG] || 1;
-      for (let i = 0; i < w; i++) pool.push(item);
+    items.forEach(i => {
+      const w = stats.weights[i.ENG] || 1;
+      for (let k = 0; k < w; k++) pool.push(i);
     });
     return pool[Math.floor(Math.random() * pool.length)];
   }
 
   function nextSentence() {
-    const filtered = data.filter(d => d.CEFR === stats.level);
-    current = weightedRandom(filtered.length ? filtered : data);
+    const byLevel = data.filter(d => d.CEFR === stats.level);
+    current = weightedRandom(byLevel.length ? byLevel : data);
 
     englishText.textContent = examMode ? '🎧 Ouça e repita' : current.ENG;
     translationText.textContent = current.PTBR;
@@ -155,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* =======================
-     PRONÚNCIA (STT)
+     PRONÚNCIA
   ======================= */
 
   function normalize(t) {
@@ -173,15 +180,27 @@ document.addEventListener('DOMContentLoaded', () => {
   function highlightDifferences(target, spoken) {
     const t = target.split(' ');
     const s = spoken.split(' ');
-
     return t.map((w, i) => {
-      const score = similarity(w, s[i] || '');
-      if (score >= 0.85) return `<span>${w}</span>`;
-      const cls = score >= 0.5
+      const sc = similarity(w, s[i] || '');
+      if (sc >= 0.85) return `<span>${w}</span>`;
+      const cls = sc >= 0.5
         ? 'text-yellow-400 underline cursor-pointer'
         : 'text-red-400 underline cursor-pointer';
       return `<span class="${cls}" data-word="${w}">${w}</span>`;
     }).join(' ');
+  }
+
+  function attachWordListeners() {
+    document.querySelectorAll('[data-word]').forEach(el => {
+      el.onclick = () => speakWord(el.dataset.word);
+    });
+  }
+
+  function adjustLevel(success) {
+    let i = levels.indexOf(stats.level);
+    if (success && i < levels.length - 1) i++;
+    if (!success && i > 0) i--;
+    stats.level = levels[i];
   }
 
   function listen() {
@@ -197,21 +216,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const score = similarity(spoken, target);
 
       englishText.innerHTML = highlightDifferences(target, spoken);
-      document.querySelectorAll('[data-word]').forEach(el =>
-        el.onclick = () => speakText(el.dataset.word)
-      );
+      attachWordListeners();
 
       if (score >= 0.75) {
-        feedback.textContent = '✅ Boa pronúncia';
         stats.hits++;
+        feedback.textContent = '✅ Boa pronúncia';
         adjustLevel(true);
       } else {
-        feedback.textContent = '❌ Atenção às palavras';
         stats.errors++;
+        feedback.textContent = '❌ Atenção às palavras';
         adjustLevel(false);
       }
 
-      saveProgress();
+      saveStats();
       updateUI();
     };
 
@@ -219,30 +236,31 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* =======================
-     PROGRESSÃO CEFR (CORRIGIDA)
-  ======================= */
-
-  function adjustLevel(success) {
-    let i = levels.indexOf(stats.level);
-    if (success && i < levels.length - 1) i++;
-    if (!success && i > 0) i--;
-    stats.level = levels[i];
-  }
-
-  /* =======================
      UI / ESTADO
   ======================= */
 
+  function toggleTranslation() {
+    translationText.classList.toggle('hidden');
+  }
+
   function toggleDataset() {
     datasetKey = datasetKey === 'frases' ? 'palavras' : 'frases';
+    saveStats();
     loadDataset();
-    saveProgress();
   }
 
   function toggleExamMode() {
     examMode = !examMode;
+    saveStats();
     nextSentence();
-    saveProgress();
+    updateUI();
+  }
+
+  function resetProgress() {
+    if (!confirm('Deseja apagar todo o progresso?')) return;
+    stats = { level: 'A1', hits: 0, errors: 0, weights: {} };
+    saveStats();
+    nextSentence();
     updateUI();
   }
 
@@ -254,17 +272,11 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
   }
 
-  function resetProgress() {
-    if (!confirm('Deseja apagar todo o progresso?')) return;
-    stats = { level: 'A1', hits: 0, errors: 0, weights: {} };
-    saveProgress();
-    nextSentence();
-    updateUI();
-  }
+  async function saveStats() {
+    localStorage.setItem('stats', JSON.stringify(stats));
+    if (!user) return;
 
-  async function saveProgress() {
-    if (!userRef) return;
-    await firebase.firestore.setDoc(userRef, {
+    await setDoc(doc(db, 'users', user.uid), {
       stats,
       dataset: datasetKey,
       examMode
