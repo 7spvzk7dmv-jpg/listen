@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Login — Listen English</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>Login - Listen English</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-zinc-900 text-zinc-100 min-h-screen flex items-center justify-center">
 
   <div class="bg-zinc-800 p-6 rounded-xl w-full max-w-sm space-y-4">
+
     <h1 class="text-xl font-semibold text-center">Listen English</h1>
 
     <input id="email" type="email" placeholder="E-mail"
@@ -28,50 +29,69 @@
       Criar conta
     </button>
 
-    <p id="msg" class="text-center text-sm text-red-400"></p>
+    <hr class="border-zinc-600">
+
+    <button id="googleBtn"
+      class="w-full bg-white text-black py-2 rounded hover:bg-zinc-200 flex items-center justify-center gap-2">
+      🔵 Entrar com Google
+    </button>
+
+    <p id="msg" class="text-sm text-center text-red-400"></p>
+
   </div>
 
-  <!-- Firebase -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import {
-      getAuth,
-      signInWithEmailAndPassword,
-      createUserWithEmailAndPassword
-    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import {
+    getAuth,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    GoogleAuthProvider,
+    signInWithPopup
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "SUA_API_KEY",
-      authDomain: "tca-listen-english.firebaseapp.com",
-      projectId: "tca-listen-english",
-      storageBucket: "tca-listen-english.appspot.com",
-      messagingSenderId: "727416842890",
-      appId: "1:727416842890:web:89b1d0215b297a7563db73"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyDHEzqBQ00kk3zACQU_tqJzvAVFM6erxks",
+    authDomain: "tca-listen-english.firebaseapp.com",
+    projectId: "tca-listen-english",
+    storageBucket: "tca-listen-english.firebasestorage.app",
+    messagingSenderId: "727416842890",
+    appId: "1:727416842890:web:89b1d0215b297a7563db73"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
 
-    const msg = document.getElementById('msg');
+  const msg = document.getElementById('msg');
 
-    loginBtn.onclick = async () => {
-      try {
-        await signInWithEmailAndPassword(auth, email.value, password.value);
-        location.href = 'index.html';
-      } catch (e) {
-        msg.textContent = e.message;
-      }
-    };
+  loginBtn.onclick = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, email.value, password.value);
+      location.href = 'index.html';
+    } catch (e) {
+      msg.textContent = e.message;
+    }
+  };
 
-    registerBtn.onclick = async () => {
-      try {
-        await createUserWithEmailAndPassword(auth, email.value, password.value);
-        location.href = 'index.html';
-      } catch (e) {
-        msg.textContent = e.message;
-      }
-    };
-  </script>
+  registerBtn.onclick = async () => {
+    try {
+      await createUserWithEmailAndPassword(auth, email.value, password.value);
+      location.href = 'index.html';
+    } catch (e) {
+      msg.textContent = e.message;
+    }
+  };
+
+  googleBtn.onclick = async () => {
+    try {
+      await signInWithPopup(auth, provider);
+      location.href = 'index.html';
+    } catch (e) {
+      msg.textContent = e.message;
+    }
+  };
+</script>
 
 </body>
 </html>
