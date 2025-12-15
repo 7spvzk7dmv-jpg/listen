@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
      EVENTOS
   ======================= */
 
-  document.getElementById('playBtn').onclick = speak;
+  document.getElementById('playBtn').onclick = speakSentence;
   document.getElementById('micBtn').onclick = listen;
   document.getElementById('translateBtn').onclick = toggleTranslation;
   document.getElementById('nextBtn').onclick = nextSentence;
@@ -56,15 +56,10 @@ document.addEventListener('DOMContentLoaded', () => {
   ======================= */
 
   async function loadDataset() {
-    try {
-      const res = await fetch(DATASETS[datasetKey]);
-      data = await res.json();
-      nextSentence();
-      updateUI();
-    } catch (e) {
-      englishText.textContent = 'Erro ao carregar dataset.';
-      console.error(e);
-    }
+    const res = await fetch(DATASETS[datasetKey]);
+    data = await res.json();
+    nextSentence();
+    updateUI();
   }
 
   function weightedRandom(items) {
@@ -77,16 +72,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function nextSentence() {
-    if (!data.length) return;
-
     const filtered = data.filter(d => d.CEFR === stats.level);
     current = weightedRandom(filtered.length ? filtered : data);
 
-    if (!examMode) {
-      englishText.textContent = current.ENG;
-    } else {
-      englishText.textContent = '🎧 Ouça e repita';
-    }
+    englishText.textContent = examMode
+      ? '🎧 Ouça e repita'
+      : current.ENG;
 
     translationText.textContent = current.PTBR;
     translationText.classList.add('hidden');
@@ -97,9 +88,17 @@ document.addEventListener('DOMContentLoaded', () => {
      ÁUDIO (TTS)
   ======================= */
 
-  function speak(textOverride) {
+  function speakSentence() {
     if (!current) return;
-    const u = new SpeechSynthesisUtterance(textOverride || current.ENG);
+    speakText(current.ENG);
+  }
+
+  function speakWord(word) {
+    speakText(word);
+  }
+
+  function speakText(text) {
+    const u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-US';
     speechSynthesis.cancel();
     speechSynthesis.speak(u);
@@ -118,9 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function similarity(a, b) {
-    if (!a || !b) return 0;
-    if (a === b) return 1;
-
     let same = 0;
     for (let i = 0; i < Math.min(a.length, b.length); i++) {
       if (a[i] === b[i]) same++;
@@ -134,10 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return t.map((w, i) => {
       const score = similarity(w, s[i] || '');
-
-      if (score >= 0.85) {
-        return `<span>${w}</span>`;
-      }
+      if (score >= 0.85) return `<span>${w}</span>`;
 
       const cls =
         score >= 0.5
@@ -150,86 +143,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function attachWordListeners() {
     document.querySelectorAll('[data-word]').forEach(el => {
-      el.onclick = () => {
-        const word = el.dataset.word;
-        speak(word);
-      };
+      el.onclick = () => speakWord(el.dataset.word);
     });
   }
 
   function listen() {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
 
-    if (!SpeechRecognition) {
-      feedback.textContent = 'Reconhecimento de voz não suportado.';
-      return;
-    }
-
-    const rec = new SpeechRecognition();
+    const rec = new SR();
     rec.lang = 'en-US';
-    rec.continuous = false;
-    rec.interimResults = false;
-    rec.maxAlternatives = 1;
-
-    rec.onstart = () => {
-      feedback.textContent = '🎙️ Ouvindo...';
-    };
-
-    rec.onerror = e => {
-      feedback.textContent = '⚠️ Erro no microfone: ' + e.error;
-    };
 
     rec.onresult = e => {
-      const spokenRaw = e.results[0][0].transcript;
-      const spoken = normalize(spokenRaw);
+      const spoken = normalize(e.results[0][0].transcript);
       const target = normalize(current.ENG);
-
       const score = similarity(spoken, target);
 
       englishText.innerHTML = highlightDifferences(target, spoken);
       attachWordListeners();
 
       if (score >= 0.75) {
-        feedback.textContent = '✅ Boa pronúncia geral';
+        feedback.textContent = '✅ Boa pronúncia';
         stats.hits++;
-        stats.weights[current.ENG] =
-          Math.max(1, (stats.weights[current.ENG] || 1) - 1);
-        adjustLevel(true);
       } else {
-        feedback.textContent = '❌ Atenção às palavras destacadas';
+        feedback.textContent = '❌ Atenção às palavras';
         stats.errors++;
-        stats.weights[current.ENG] =
-          (stats.weights[current.ENG] || 1) + 2;
-        adjustLevel(false);
       }
 
       saveStats();
       updateUI();
     };
 
-    rec.onend = () => {
-      if (feedback.textContent.includes('Ouvindo')) {
-        feedback.textContent = '⚠️ Nenhuma fala detectada.';
-      }
-    };
-
     rec.start();
   }
 
   /* =======================
-     PROGRESSÃO CEFR
-  ======================= */
-
-  function adjustLevel(success) {
-    let i = levels.indexOf(stats.level);
-    if (success && i < levels.length - 1) i++;
-    if (!success && i > 0) i--;
-    stats.level = levels[i];
-  }
-
-  /* =======================
-     UI / ESTADO
+     UI
   ======================= */
 
   function toggleTranslation() {
@@ -250,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function resetProgress() {
-    if (!confirm('Deseja apagar todo o progresso?')) return;
     localStorage.clear();
     location.reload();
   }
@@ -259,8 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
     hitsEl.textContent = stats.hits;
     errorsEl.textContent = stats.errors;
     levelText.textContent = `Nível atual: ${stats.level}`;
-    toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
     examModeBtn.textContent = examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
+    toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
   }
 
   function saveStats() {
