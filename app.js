@@ -43,10 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
      EVENTOS
   ======================= */
 
-  document.getElementById('playBtn').addEventListener('click', () => {
-    speakSentence();
-  });
-
+  document.getElementById('playBtn').addEventListener('click', speakSentence);
   document.getElementById('micBtn').addEventListener('click', listen);
   document.getElementById('translateBtn').addEventListener('click', toggleTranslation);
   document.getElementById('nextBtn').addEventListener('click', nextSentence);
@@ -200,9 +197,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (score >= 0.75) {
         feedback.textContent = '✅ Boa pronúncia';
         stats.hits++;
+        stats.weights[current.ENG] =
+          Math.max(1, (stats.weights[current.ENG] || 1) - 1);
+        adjustLevel(true);
       } else {
         feedback.textContent = '❌ Atenção às palavras';
         stats.errors++;
+        stats.weights[current.ENG] =
+          (stats.weights[current.ENG] || 1) + 2;
+        adjustLevel(false);
       }
 
       saveStats();
@@ -214,6 +217,17 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     rec.start();
+  }
+
+  /* =======================
+     PROGRESSÃO CEFR
+  ======================= */
+
+  function adjustLevel(success) {
+    let i = levels.indexOf(stats.level);
+    if (success && i < levels.length - 1) i++;
+    if (!success && i > 0) i--;
+    stats.level = levels[i];
   }
 
   /* =======================
