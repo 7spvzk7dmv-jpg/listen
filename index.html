@@ -9,6 +9,35 @@
 
 <body class="bg-zinc-900 text-zinc-100 min-h-screen flex items-center justify-center px-4">
 
+
+
+
+<!-- Firebase SDKs -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import { getAuth } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDHEzqBQ00kk3zACQU_tqJzvAVFM6erxks",
+    authDomain: "tca-listen-english.firebaseapp.com",
+    projectId: "tca-listen-english",
+    storageBucket: "tca-listen-english.firebasestorage.app",
+    messagingSenderId: "727416842890",
+    appId: "1:727416842890:web:89b1d0215b297a7563db73"
+  };
+
+  // Initialize Firebase
+  window.firebaseApp = initializeApp(firebaseConfig);
+  window.firebaseAuth = getAuth(window.firebaseApp);
+  window.firebaseDb = getFirestore(window.firebaseApp);
+</script>
+
+
+
+
+  
+
   <div class="w-full max-w-xl bg-zinc-800 rounded-2xl shadow-lg p-6 space-y-6">
 
     <header class="flex justify-between items-center">
