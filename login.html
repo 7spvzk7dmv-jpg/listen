@@ -2,67 +2,62 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Login</title>
+  <title>Login — Listen English</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-zinc-900 text-zinc-100 min-h-screen flex items-center justify-center">
+<body class="bg-zinc-900 text-zinc-100 min-h-screen flex items-center justify-center px-4">
 
   <div class="bg-zinc-800 p-6 rounded-xl w-full max-w-sm space-y-4">
+
     <h1 class="text-xl font-semibold text-center">Listen English</h1>
 
-    <input id="email" type="email" placeholder="E-mail"
-      class="w-full p-2 rounded bg-zinc-700">
-
-    <input id="password" type="password" placeholder="Senha"
-      class="w-full p-2 rounded bg-zinc-700">
-
-    <button id="emailLogin"
-      class="w-full bg-emerald-600 py-2 rounded">
-      Entrar com e-mail
-    </button>
-
     <button id="googleLogin"
-      class="w-full bg-white text-black py-2 rounded flex items-center justify-center gap-2">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5">
+      class="w-full flex items-center justify-center gap-2 bg-white text-black py-2 rounded hover:bg-zinc-200 transition">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+           alt="Google" class="w-5 h-5">
       Entrar com Google
     </button>
 
-    <p id="msg" class="text-sm text-red-400 text-center"></p>
+    <p id="msg" class="text-center text-sm text-red-400"></p>
+
   </div>
 
-  <script type="module" src="firebase.js"></script>
-
   <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
     import {
-      signInWithEmailAndPassword,
-      signInWithPopup
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
-    const msg = document.getElementById('msg');
-
-    emailLogin.onclick = async () => {
-      try {
-        await signInWithEmailAndPassword(
-          firebaseAuth,
-          email.value,
-          password.value
-        );
-        location.href = 'index.html';
-      } catch (e) {
-        msg.textContent = e.message;
-      }
+    const firebaseConfig = {
+      apiKey: "AIzaSyDHEzqBQ00kk3zACQU_tqJzvAVFM6erxks",
+      authDomain: "tca-listen-english.firebaseapp.com",
+      projectId: "tca-listen-english",
+      storageBucket: "tca-listen-english.firebasestorage.app",
+      messagingSenderId: "727416842890",
+      appId: "1:727416842890:web:89b1d0215b297a7563db73"
     };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
     googleLogin.onclick = async () => {
       try {
-        await signInWithPopup(firebaseAuth, googleProvider);
+        await signInWithPopup(auth, provider);
         location.href = 'index.html';
       } catch (e) {
         msg.textContent = e.message;
       }
     };
+
+    onAuthStateChanged(auth, user => {
+      if (user) location.href = 'index.html';
+    });
   </script>
 
 </body>
