@@ -2,30 +2,9 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>English Pronunciation Trainer</title>
+  <title>English Trainer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Firebase SDKs (SEM module – compatível Safari) -->
-  <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore-compat.js"></script>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDHEzqBQ00kk3zACQU_tqJzvAVFM6erxks",
-      authDomain: "tca-listen-english.firebaseapp.com",
-      projectId: "tca-listen-english",
-      storageBucket: "tca-listen-english.firebasestorage.app",
-      messagingSenderId: "727416842890",
-      appId: "1:727416842890:web:89b1d0215b297a7563db73"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-
-    window.auth = firebase.auth();
-    window.db = firebase.firestore();
-  </script>
 </head>
 
 <body class="bg-zinc-900 text-zinc-100 min-h-screen flex items-center justify-center px-4">
@@ -35,13 +14,17 @@
     <header class="flex justify-between items-center">
       <h1 class="text-xl font-semibold">English Trainer</h1>
       <div class="flex gap-2">
-        <button id="examModeBtn"
-          class="text-sm bg-zinc-700 px-3 py-1 rounded hover:bg-zinc-600">
-          📝 Modo exame: OFF
-        </button>
         <button id="logoutBtn"
           class="text-sm bg-red-600 px-3 py-1 rounded hover:bg-red-500">
           Sair
+        </button>
+        <button id="examModeBtn"
+          class="text-sm bg-zinc-700 px-3 py-1 rounded">
+          📝 Modo exame: OFF
+        </button>
+        <button id="toggleDataset"
+          class="text-sm bg-zinc-700 px-3 py-1 rounded">
+          Dataset: frases
         </button>
       </div>
     </header>
@@ -63,3 +46,17 @@
       <p id="feedback"></p>
       <p>
         ✅ <span id="hits">0</span> |
+        ❌ <span id="errors">0</span>
+      </p>
+    </div>
+
+    <button id="resetBtn" class="text-red-400 hover:underline text-sm">
+      Resetar progresso
+    </button>
+
+  </div>
+
+  <!-- Firebase + App -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
