@@ -10,34 +10,48 @@
 
 <body>
 
-  <div class="app">
+  <main class="card">
 
-    <header class="header">
+    <!-- TOP BAR -->
+    <header class="topbar">
       <h1>English Trainer</h1>
 
-      <div class="header-actions">
-        <button id="logoutBtn" class="btn btn-danger">Sair</button>
-        <button id="examModeBtn" class="btn">📝 Modo exame: OFF</button>
-        <button id="toggleDataset" class="btn">Dataset: frases</button>
+      <div class="top-actions">
+        <button id="examModeBtn" class="chip">
+          📝 Exame: OFF
+        </button>
+
+        <button id="toggleDataset" class="chip">
+          📚 Frases
+        </button>
+
+        <button id="logoutBtn" class="chip danger">
+          Sair
+        </button>
       </div>
     </header>
 
-    <main class="content">
+    <!-- CONTENT -->
+    <section class="content">
+
       <p id="englishText" class="english"></p>
       <p id="translationText" class="translation hidden"></p>
 
       <p id="levelText" class="level">
-        Nível: A1 | Pontos: 0 | Streak: 0
+        Nível: A1 | Pontos: 0
       </p>
-    </main>
 
+    </section>
+
+    <!-- CONTROLS -->
     <section class="controls">
       <button id="playBtn" class="btn">🔊 Ouvir</button>
-      <button id="micBtn" class="btn">🎤 Falar</button>
+      <button id="micBtn" class="btn primary">🎤 Falar</button>
       <button id="translateBtn" class="btn">🇧🇷 Tradução</button>
       <button id="nextBtn" class="btn">➡️ Próxima</button>
     </section>
 
+    <!-- FEEDBACK -->
     <section class="feedback">
       <p id="feedback"></p>
       <p>
@@ -47,11 +61,14 @@
       </p>
     </section>
 
-    <footer class="reset">
-      <button id="resetBtn" class="link-danger">Resetar progresso</button>
+    <!-- RESET -->
+    <footer class="footer">
+      <button id="resetBtn" class="link">
+        Resetar progresso
+      </button>
     </footer>
 
-  </div>
+  </main>
 
   <!-- Firebase base -->
   <script type="module" src="firebase.js"></script>
@@ -74,7 +91,7 @@
     };
   </script>
 
-  <!-- App -->
+  <!-- App principal -->
   <script src="app.js"></script>
 
 </body>
