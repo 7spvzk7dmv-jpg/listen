@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   let userRef = null;
   let firebaseReady = false;
 
+  /* =======================
+     CONFIGURAÇÕES
+  ======================= */
+
   const DATASETS = {
     frases: 'data/frases.json',
     palavras: 'data/palavras.json'
@@ -24,8 +28,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const SCORE_MIN = 0;
   const SCORE_MAX = 100;
-
   const WINDOW_SIZE = 10;
+
+  /* =======================
+     ESTADO
+  ======================= */
 
   let datasetKey = 'frases';
   let data = [];
@@ -56,6 +63,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   const examModeBtn = document.getElementById('examModeBtn');
 
   /* =======================
+     TTS
+  ======================= */
+
+  let selectedVoice = null;
+
+  function pickEnglishVoice() {
+    const voices = speechSynthesis.getVoices();
+    selectedVoice =
+      voices.find(v => v.lang === 'en-US') || null;
+  }
+
+  speechSynthesis.onvoiceschanged = pickEnglishVoice;
+  pickEnglishVoice();
+
+  function speakText(text) {
+    if (!selectedVoice) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.voice = selectedVoice;
+    u.lang = 'en-US';
+    u.rate = 0.9;
+    speechSynthesis.speak(u);
+  }
+
+  window.speakWord = speakText;
+
+  /* =======================
      UTIL
   ======================= */
 
@@ -63,6 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return Math.min(SCORE_MAX, Math.max(SCORE_MIN, v));
   }
 
+  // ✅ NÍVEIS — EXATAMENTE COMO DEFINIDO
   function levelFromScore(score) {
     if (score <= 10) return 'A1';
     if (score >= 11 && score <= 20) return 'A2';
@@ -72,8 +107,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (score >= 91) return 'C2';
   }
 
+  function levelUpperBound(level) {
+    return { A1:10, A2:20, B1:40, B2:70, C1:90, C2:100 }[level];
+  }
+
   function normalize(t) {
-    return t.toLowerCase().replace(/[^a-z']/g,' ').replace(/\s+/g,' ').trim();
+    return t.toLowerCase()
+      .replace(/[^a-z']/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
   }
 
   function normalizeVowel(w) {
@@ -83,6 +125,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/o|u/g,'o');
   }
 
+  /* =======================
+     MODELO ROBUSTO
+  ======================= */
+
   function updateRecent(isHit) {
     stats.recent.push(isHit);
     if (stats.recent.length > WINDOW_SIZE) {
@@ -91,7 +137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function recentAccuracy() {
-    if (stats.recent.length === 0) return 1;
+    if (!stats.recent.length) return 1;
     return stats.recent.filter(Boolean).length / stats.recent.length;
   }
 
@@ -111,10 +157,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? SCORE_RULES.hits[stats.level]
       : SCORE_RULES.errors[stats.level];
 
-    // Proteção contra STT injusto
-    if (!isHit && accuracy >= 0.9) {
-      delta = 0;
-    }
+    // Proteção contra erro do STT
+    if (!isHit && accuracy >= 0.9) delta = 0;
 
     stats.score = clampScore(stats.score + delta);
     applyStreak(isHit);
@@ -123,20 +167,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function evaluateLevel() {
     const acc = recentAccuracy();
+    const upper = levelUpperBound(stats.level);
 
     // Subida com histerese
-    if (
-      stats.score >= SCORE_MAX &&
-      acc >= 0.75 &&
-      stats.streak >= 3
-    ) {
+    if (stats.score >= upper && acc >= 0.75 && stats.streak >= 3) {
       stats.level = levelFromScore(stats.score);
       return;
     }
 
     // Regressão controlada
     if (
-      stats.score <= SCORE_MIN &&
+      stats.score < upper - 10 &&
       acc < 0.55 &&
       stats.recent.slice(-5).filter(v => !v).length >= 3
     ) {
