@@ -7,6 +7,24 @@
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- CSS complementar obrigatório -->
+  <style>
+    .wrong {
+      color: #f87171; /* red-400 */
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
+    .wrong:hover {
+      color: #fca5a5; /* red-300 */
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
 
 <body class="bg-zinc-900 text-zinc-100 min-h-screen flex items-center justify-center px-4">
@@ -37,7 +55,10 @@
 
     <!-- TEXTO PRINCIPAL -->
     <div class="text-center space-y-3">
-      <p id="englishText" class="text-2xl font-medium leading-relaxed"></p>
+      <p id="englishText"
+         class="text-2xl font-medium leading-relaxed select-text">
+      </p>
+
       <p id="translationText" class="text-zinc-400 hidden"></p>
 
       <!-- MOSTRADOR DE NÍVEL E PONTUAÇÃO -->
