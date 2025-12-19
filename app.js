@@ -37,7 +37,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     weights: {}
   };
 
-  let selectedVoice = null;
+  /* =======================
+     DOM
+  ======================= */
 
   const englishText = document.getElementById('englishText');
   const translationText = document.getElementById('translationText');
@@ -47,6 +49,43 @@ document.addEventListener('DOMContentLoaded', async () => {
   const levelText = document.getElementById('levelText');
   const toggleDatasetBtn = document.getElementById('toggleDataset');
   const examModeBtn = document.getElementById('examModeBtn');
+
+  /* =======================
+     TTS ROBUSTO
+  ======================= */
+
+  let selectedVoice = null;
+
+  function pickEnglishVoice() {
+    const voices = speechSynthesis.getVoices();
+    selectedVoice =
+      voices.find(v => v.lang === 'en-US' && /Google|Daniel|Samantha|Aaron/i.test(v.name)) ||
+      voices.find(v => v.lang === 'en-US') ||
+      null;
+  }
+
+  speechSynthesis.onvoiceschanged = pickEnglishVoice;
+  pickEnglishVoice();
+
+  function speakText(text) {
+    if (!selectedVoice) {
+      feedback.textContent = '⚠️ Voz inglesa indisponível';
+      return;
+    }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.voice = selectedVoice;
+    u.lang = 'en-US';
+    u.rate = 0.9;
+    u.pitch = 1;
+    speechSynthesis.speak(u);
+  }
+
+  window.speakWord = speakText;
+
+  /* =======================
+     UTIL
+  ======================= */
 
   function clampScore(v) {
     return Math.min(SCORE_MAX, Math.max(SCORE_MIN, v));
@@ -65,14 +104,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     return t.toLowerCase().replace(/[^a-z']/g,' ').replace(/\s+/g,' ').trim();
   }
 
-  function normalizePhonetic(w) {
+  function normalizeVowel(w) {
     return w
-      .replace(/[aeæ]/g,'a')
-      .replace(/[ɛe]/g,'e')
-      .replace(/[ɪi]/g,'i')
-      .replace(/[ɒɔo]/g,'o')
-      .replace(/[ʊu]/g,'u');
+      .replace(/ee|ea|ie|ei|i/g,'i')
+      .replace(/a|e/g,'a')
+      .replace(/o|u/g,'o');
   }
+
+  /* =======================
+     AUTH
+  ======================= */
 
   onAuthStateChanged(auth, async user => {
     if (!user) return;
@@ -95,8 +136,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     init();
   });
 
+  /* =======================
+     INIT
+  ======================= */
+
   function init() {
-    initVoices();
     bindEvents();
     loadDataset();
     updateUI();
@@ -112,25 +156,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     examModeBtn.onclick = toggleExamMode;
   }
 
-  function initVoices() {
-    const pick = () => {
-      const v = speechSynthesis.getVoices();
-      selectedVoice = v.find(x => x.lang === 'en-US') || v[0];
-    };
-    pick();
-    speechSynthesis.onvoiceschanged = pick;
-  }
-
-  function speakText(t) {
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(t);
-    u.lang = 'en-US';
-    if (selectedVoice) u.voice = selectedVoice;
-    u.rate = 0.95;
-    speechSynthesis.speak(u);
-  }
-
-  window.speakWord = speakText;
+  /* =======================
+     DATASET
+  ======================= */
 
   async function loadDataset() {
     const r = await fetch(DATASETS[datasetKey]);
@@ -147,6 +175,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     feedback.textContent = '';
   }
 
+  /* =======================
+     STT COM TOLERÂNCIA VOCÁLICA
+  ======================= */
+
   function diffWords(spoken, target) {
     const s = spoken.split(' ');
     const t = target.split(' ');
@@ -154,10 +186,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     return t.map(word => {
       let ok = false;
+
       for (let j = si; j <= si + 1 && j < s.length; j++) {
         if (
           s[j] === word ||
-          normalizePhonetic(s[j]) === normalizePhonetic(word)
+          (datasetKey === 'palavras' &&
+           word.length <= 4 &&
+           normalizeVowel(s[j]) === normalizeVowel(word))
         ) {
           ok = true;
           si = j + 1;
@@ -173,14 +208,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       w.ok ? w.word :
       `<span class="wrong" onclick="speakWord('${w.word}')">${w.word}</span>`
     ).join(' ');
-  }
-
-  function adjustLevel(success) {
-    const delta = success
-      ? SCORE_RULES.hits[current.CEFR]
-      : SCORE_RULES.errors[current.CEFR];
-    stats.score = clampScore(stats.score + delta);
-    stats.level = levelFromScore(stats.score);
   }
 
   function listen() {
@@ -200,20 +227,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (accuracy >= 0.6) {
         feedback.textContent = '✅ Boa pronúncia';
         stats.hits++;
-        adjustLevel(true);
       } else {
         feedback.textContent = '❌ Clique nas palavras destacadas';
         stats.errors++;
-        adjustLevel(false);
         if (!examMode) renderDiff(diff);
       }
 
-      saveAll();
       updateUI();
+      saveAll();
     };
 
     r.start();
   }
+
+  /* =======================
+     UI
+  ======================= */
 
   function toggleDataset() {
     datasetKey = datasetKey === 'frases' ? 'palavras' : 'frases';
