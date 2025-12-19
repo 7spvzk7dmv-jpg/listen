@@ -10,28 +10,36 @@
 
 <body>
 
-  <div class="auth-box">
+  <main class="card auth">
 
-    <h1>English Trainer</h1>
+    <header class="auth-header">
+      <h1>English Trainer</h1>
+      <p>Entre para continuar seu treino</p>
+    </header>
 
-    <input id="email" type="email" placeholder="E-mail">
-    <input id="password" type="password" placeholder="Senha">
+    <section class="auth-form">
+      <input id="email" type="email" placeholder="E-mail" />
+      <input id="password" type="password" placeholder="Senha" />
 
-    <button id="loginBtn" class="btn btn-primary">Entrar</button>
-    <button id="registerBtn" class="btn btn-secondary">Criar conta</button>
+      <button id="loginBtn" class="btn primary">Entrar</button>
+      <button id="registerBtn" class="btn">Criar conta</button>
+    </section>
 
     <div class="divider">
-      <span class="small">OU</span>
+      <span>OU</span>
     </div>
 
-    <button id="googleBtn" class="btn btn-google">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" height="18">
+    <button id="googleBtn" class="btn google">
+      <img
+        src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+        alt="Google"
+      />
       Entrar com Google
     </button>
 
-    <p id="msg" class="small" style="color:#f87171;"></p>
+    <p id="msg" class="error"></p>
 
-  </div>
+  </main>
 
   <script type="module" src="firebase.js"></script>
 
