@@ -1,5 +1,8 @@
 document.addEventListener('DOMContentLoaded', async () => {
 
+  /* =======================
+     FIREBASE
+  ======================= */
   const { onAuthStateChanged } =
     await import('https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js');
   const { doc, getDoc, setDoc } =
@@ -14,12 +17,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* =======================
      DOM
   ======================= */
-
   const playBtn = document.getElementById('playBtn');
   const micBtn = document.getElementById('micBtn');
   const translateBtn = document.getElementById('translateBtn');
   const nextBtn = document.getElementById('nextBtn');
   const resetBtn = document.getElementById('resetBtn');
+  const toggleDatasetBtn = document.getElementById('toggleDataset');
+  const examModeBtn = document.getElementById('examModeBtn');
 
   const englishText = document.getElementById('englishText');
   const translationText = document.getElementById('translationText');
@@ -27,13 +31,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const hitsEl = document.getElementById('hits');
   const errorsEl = document.getElementById('errors');
   const levelText = document.getElementById('levelText');
-  const toggleDatasetBtn = document.getElementById('toggleDataset');
-  const examModeBtn = document.getElementById('examModeBtn');
 
   /* =======================
      CONFIG
   ======================= */
-
   const DATASETS = {
     frases: 'data/frases.json',
     palavras: 'data/palavras.json'
@@ -51,7 +52,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* =======================
      ESTADO
   ======================= */
-
   let datasetKey = 'frases';
   let data = [];
   let current = null;
@@ -63,45 +63,60 @@ document.addEventListener('DOMContentLoaded', async () => {
     hits: 0,
     errors: 0,
     streak: 0,
-    recent: [],
-    weights: {}
+    recent: []
   };
 
   /* =======================
      UTIL
   ======================= */
-
   function clampScore(v) {
     return Math.min(SCORE_MAX, Math.max(SCORE_MIN, v));
   }
 
+  // 🔒 LEVELS — EXATAMENTE COMO VOCÊ DEFINIU
   function levelFromScore(score) {
     if (score <= 10) return 'A1';
-    if (score <= 20) return 'A2';
-    if (score <= 40) return 'B1';
-    if (score <= 70) return 'B2';
-    if (score <= 90) return 'C1';
-    return 'C2';
-  }
-
-  function levelUpperBound(level) {
-    return { A1:10, A2:20, B1:40, B2:70, C1:90, C2:100 }[level];
+    if (score >= 11 && score <= 20) return 'A2';
+    if (score >= 21 && score <= 40) return 'B1';
+    if (score >= 41 && score <= 70) return 'B2';
+    if (score >= 71 && score <= 90) return 'C1';
+    if (score >= 91) return 'C2';
   }
 
   function normalize(t) {
-    return t.toLowerCase().replace(/[^a-z']/g,' ').replace(/\s+/g,' ').trim();
+    return t.toLowerCase()
+      .replace(/[^a-z']/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
   }
 
-  function normalizeVowel(w) {
-    return w.replace(/ee|ea|ie|ei|i/g,'i')
-            .replace(/a|e/g,'a')
-            .replace(/o|u/g,'o');
+  /* =======================
+     STREAK + CONSISTÊNCIA
+  ======================= */
+  function updateRecent(isHit) {
+    stats.recent.push(isHit);
+    if (stats.recent.length > WINDOW_SIZE) stats.recent.shift();
+  }
+
+  function recentAccuracy() {
+    if (!stats.recent.length) return 1;
+    return stats.recent.filter(Boolean).length / stats.recent.length;
+  }
+
+  function applyStreak(isHit) {
+    if (isHit) {
+      stats.streak++;
+      if (stats.streak === 3) stats.score += 1;
+      if (stats.streak === 5) stats.score += 2;
+      if (stats.streak >= 8) stats.score += 1;
+    } else {
+      stats.streak = 0;
+    }
   }
 
   /* =======================
      TTS
   ======================= */
-
   let selectedVoice = null;
 
   function pickEnglishVoice() {
@@ -125,34 +140,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.speakWord = speakText;
 
   /* =======================
-     MODELO
-  ======================= */
-
-  function updateRecent(isHit) {
-    stats.recent.push(isHit);
-    if (stats.recent.length > WINDOW_SIZE) stats.recent.shift();
-  }
-
-  function recentAccuracy() {
-    if (!stats.recent.length) return 1;
-    return stats.recent.filter(Boolean).length / stats.recent.length;
-  }
-
-  function applyScore(isHit, accuracy) {
-    let delta = isHit
-      ? SCORE_RULES.hits[stats.level]
-      : SCORE_RULES.errors[stats.level];
-
-    if (!isHit && accuracy >= 0.9) delta = 0;
-
-    stats.score = clampScore(stats.score + delta);
-    stats.level = levelFromScore(stats.score);
-  }
-
-  /* =======================
      DATASET
   ======================= */
-
   async function loadDataset() {
     const r = await fetch(DATASETS[datasetKey]);
     data = await r.json();
@@ -161,17 +150,45 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function nextSentence() {
     const filtered = data.filter(d => d.CEFR === stats.level);
+    if (!filtered.length) return;
     current = filtered[Math.floor(Math.random() * filtered.length)];
-    englishText.textContent = examMode ? '🎧 Ouça e repita' : current.ENG;
+    englishText.innerHTML = examMode ? '🎧 Ouça e repita' : current.ENG;
     translationText.textContent = current.PTBR;
     translationText.classList.add('hidden');
     feedback.textContent = '';
   }
 
   /* =======================
+     DIFF + HIGHLIGHT
+  ======================= */
+  function diffWords(spoken, target) {
+    const s = spoken.split(' ');
+    const t = target.split(' ');
+    let si = 0;
+
+    return t.map(word => {
+      let ok = false;
+      for (let j = si; j <= si + 1 && j < s.length; j++) {
+        if (s[j] === word) {
+          ok = true;
+          si = j + 1;
+          break;
+        }
+      }
+      return { word, ok };
+    });
+  }
+
+  function renderDiff(diff) {
+    englishText.innerHTML = diff.map(w =>
+      w.ok ? w.word :
+      `<span class="wrong" onclick="speakWord('${w.word}')">${w.word}</span>`
+    ).join(' ');
+  }
+
+  /* =======================
      STT
   ======================= */
-
   function listen() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR || !current) return;
@@ -183,13 +200,29 @@ document.addEventListener('DOMContentLoaded', async () => {
       const spoken = normalize(e.results[0][0].transcript);
       const target = normalize(current.ENG);
 
-      const accuracy = spoken === target ? 1 : 0;
+      const diff = diffWords(spoken, target);
+      const accuracy = diff.filter(w => w.ok).length / diff.length;
       const isHit = accuracy >= 0.6;
 
       updateRecent(isHit);
-      applyScore(isHit, accuracy);
+      applyStreak(isHit);
 
-      feedback.textContent = isHit ? '✅ Boa pronúncia' : '❌ Tente novamente';
+      let delta = isHit
+        ? SCORE_RULES.hits[stats.level]
+        : SCORE_RULES.errors[stats.level];
+
+      stats.score = clampScore(stats.score + delta);
+      stats.level = levelFromScore(stats.score);
+
+      if (isHit) {
+        stats.hits++;
+        feedback.textContent = '✅ Boa pronúncia';
+      } else {
+        stats.errors++;
+        feedback.textContent = '❌ Clique nas palavras destacadas';
+        if (!examMode) renderDiff(diff);
+      }
+
       updateUI();
       saveAll();
     };
@@ -200,40 +233,50 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* =======================
      UI
   ======================= */
-
   function updateUI() {
     hitsEl.textContent = stats.hits;
     errorsEl.textContent = stats.errors;
-    levelText.textContent = `Nível: ${stats.level} | Pontos: ${stats.score}`;
+    levelText.textContent =
+      `Nível: ${stats.level} | Pontos: ${stats.score} | Streak: ${stats.streak}`;
+    examModeBtn.textContent =
+      examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
+    toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
   }
 
-  function saveAll() {
-    if (!firebaseReady || !userRef) return;
-    setDoc(userRef, { stats, datasetKey, examMode });
-  }
-
-  function init() {
-    bindEvents();
+  function resetProgress() {
+    if (!confirm('Deseja apagar todo o progresso?')) return;
+    stats = { level:'A1', score:0, hits:0, errors:0, streak:0, recent:[] };
+    datasetKey = 'frases';
+    examMode = false;
+    saveAll();
     loadDataset();
     updateUI();
   }
 
-  function bindEvents() {
-    playBtn.onclick = () => current && speakText(current.ENG);
-    micBtn.onclick = listen;
-    translateBtn.onclick = () => translationText.classList.toggle('hidden');
-    nextBtn.onclick = nextSentence;
-    resetBtn.onclick = () => location.reload();
-    toggleDatasetBtn.onclick = () => {
-      datasetKey = datasetKey === 'frases' ? 'palavras' : 'frases';
-      loadDataset();
-    };
-  }
+  /* =======================
+     EVENTOS
+  ======================= */
+  playBtn.onclick = () => current && speakText(current.ENG);
+  micBtn.onclick = listen;
+  translateBtn.onclick = () => translationText.classList.toggle('hidden');
+  nextBtn.onclick = nextSentence;
+  resetBtn.onclick = resetProgress;
+
+  toggleDatasetBtn.onclick = () => {
+    datasetKey = datasetKey === 'frases' ? 'palavras' : 'frases';
+    loadDataset();
+    updateUI();
+  };
+
+  examModeBtn.onclick = () => {
+    examMode = !examMode;
+    nextSentence();
+    updateUI();
+  };
 
   /* =======================
-     AUTH (AGORA NÃO BLOQUEIA A UI)
+     FIREBASE (SÓ PERSISTE)
   ======================= */
-
   onAuthStateChanged(auth, async user => {
     if (!user) return;
 
@@ -242,15 +285,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (snap.exists()) {
       const saved = snap.data();
       stats = { ...stats, ...(saved.stats || {}) };
+      datasetKey = saved.datasetKey || datasetKey;
+      examMode = saved.examMode || false;
     }
+
     firebaseReady = true;
+    stats.score = clampScore(stats.score);
+    stats.level = levelFromScore(stats.score);
     updateUI();
   });
+
+  function saveAll() {
+    if (!firebaseReady || !userRef) return;
+    setDoc(userRef, { stats, datasetKey, examMode });
+  }
 
   /* =======================
      START
   ======================= */
-
-  init();
+  loadDataset();
+  updateUI();
 
 });
