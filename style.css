@@ -1,77 +1,80 @@
-/* =====================
-   RESET / BASE
-===================== */
+/* ===== RESET ===== */
 
 * {
   box-sizing: border-box;
 }
 
-html, body {
-  margin: 0;
-  padding: 0;
-}
-
 body {
+  margin: 0;
   min-height: 100vh;
-  background: #18181b;
+  background: linear-gradient(160deg, #18181b, #09090b);
   color: #f4f4f5;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   padding: 16px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* =====================
-   CONTAINERS
-===================== */
+/* ===== CARD ===== */
 
-.app,
-.auth-box {
+.card {
   width: 100%;
-  max-width: 520px;
+  max-width: 560px;
   background: #27272a;
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 24px;
-  box-shadow: 0 20px 40px rgba(0,0,0,.45);
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  overflow: hidden; /* 🔒 impede vazamento */
+  gap: 24px;
+  box-shadow: 0 30px 60px rgba(0,0,0,.55);
 }
 
-.auth-box {
-  max-width: 380px;
-}
+/* ===== TOP BAR ===== */
 
-/* =====================
-   HEADER
-===================== */
-
-.header {
+.topbar {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
-  width: 100%;
 }
 
-.header h1 {
-  font-size: 20px;
+.topbar h1 {
   margin: 0;
-  flex-shrink: 0;
+  font-size: 22px;
 }
 
-.header-actions {
+.top-actions {
   display: flex;
   gap: 8px;
-  margin-left: auto;
-  min-width: 0;          /* 🔑 permite encolher */
-  overflow: hidden;     /* 🔑 impede sair do box */
+  flex-wrap: wrap;
 }
 
-/* =====================
-   TEXT CONTENT
-===================== */
+/* ===== CHIPS ===== */
+
+.chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #3f3f46;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  background: #52525b;
+}
+
+.chip.danger {
+  background: #7f1d1d;
+}
+
+.chip.danger:hover {
+  background: #991b1b;
+}
+
+/* ===== CONTENT ===== */
 
 .content {
   text-align: center;
@@ -81,13 +84,14 @@ body {
 }
 
 .english {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 500;
   line-height: 1.4;
 }
 
 .translation {
   color: #a1a1aa;
+  font-size: 15px;
 }
 
 .level {
@@ -96,107 +100,56 @@ body {
   font-family: monospace;
 }
 
-/* =====================
-   INPUTS
-===================== */
+/* ===== CONTROLS ===== */
 
-input {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: none;
-  background: #3f3f46;
-  color: inherit;
-  font-size: 14px;
-  outline: none;
+.controls {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
 
-input::placeholder {
-  color: #a1a1aa;
+@media (min-width: 480px) {
+  .controls {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
-
-/* =====================
-   BUTTONS
-===================== */
 
 .btn {
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
   background: #3f3f46;
   color: inherit;
-  border: none;
-  padding: 10px 14px;
-  border-radius: 10px;
-  cursor: pointer;
   font-size: 14px;
-
-  white-space: nowrap;
-  max-width: 160px;           /* 🔒 limite visual */
-  overflow: hidden;
-  text-overflow: ellipsis;    /* ✂️ corta bonito */
+  cursor: pointer;
 }
 
 .btn:hover {
   background: #52525b;
 }
 
-.btn-primary {
+.btn.primary {
   background: #059669;
 }
 
-.btn-primary:hover {
+.btn.primary:hover {
   background: #10b981;
 }
 
-.btn-secondary {
-  background: #52525b;
-}
+/* ===== FEEDBACK ===== */
 
-.btn-danger {
-  background: #dc2626;
-}
-
-.btn-danger:hover {
-  background: #ef4444;
-}
-
-.btn-google {
-  background: #ffffff;
-  color: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.btn-google:hover {
-  background: #e5e7eb;
-}
-
-/* =====================
-   CONTROLS
-===================== */
-
-.controls {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-/* =====================
-   FEEDBACK / STATS
-===================== */
-
-.feedback,
-.stats {
+.feedback {
   text-align: center;
   font-size: 14px;
 }
 
-/* =====================
-   RESET LINK
-===================== */
+/* ===== FOOTER ===== */
 
-.link-danger {
+.footer {
+  text-align: center;
+}
+
+.link {
   background: none;
   border: none;
   color: #f87171;
@@ -204,45 +157,17 @@ input::placeholder {
   font-size: 14px;
 }
 
-.link-danger:hover {
+.link:hover {
   text-decoration: underline;
 }
 
-/* =====================
-   DIVIDER
-===================== */
-
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.divider::before,
-.divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: #52525b;
-}
-
-.small {
-  font-size: 12px;
-  color: #a1a1aa;
-  text-align: center;
-}
-
-/* =====================
-   UTIL
-===================== */
+/* ===== UTIL ===== */
 
 .hidden {
   display: none;
 }
 
-/* =====================
-   WRONG WORD
-===================== */
+/* ===== WRONG WORD ===== */
 
 .wrong {
   color: #f87171;
