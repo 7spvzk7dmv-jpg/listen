@@ -1,4 +1,3 @@
-<script>
 document.addEventListener('DOMContentLoaded', async () => {
 
   const { onAuthStateChanged } =
@@ -13,7 +12,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   let firebaseReady = false;
 
   /* =======================
-     CONFIGURAÇÕES
+     DOM (✅ CORREÇÃO CRÍTICA)
+  ======================= */
+
+  const playBtn = document.getElementById('playBtn');
+  const micBtn = document.getElementById('micBtn');
+  const translateBtn = document.getElementById('translateBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  const englishText = document.getElementById('englishText');
+  const translationText = document.getElementById('translationText');
+  const feedback = document.getElementById('feedback');
+  const hitsEl = document.getElementById('hits');
+  const errorsEl = document.getElementById('errors');
+  const levelText = document.getElementById('levelText');
+  const toggleDatasetBtn = document.getElementById('toggleDataset');
+  const examModeBtn = document.getElementById('examModeBtn');
+
+  /* =======================
+     CONFIG
   ======================= */
 
   const DATASETS = {
@@ -50,17 +68,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   /* =======================
-     DOM
+     UTIL
   ======================= */
 
-  const englishText = document.getElementById('englishText');
-  const translationText = document.getElementById('translationText');
-  const feedback = document.getElementById('feedback');
-  const hitsEl = document.getElementById('hits');
-  const errorsEl = document.getElementById('errors');
-  const levelText = document.getElementById('levelText');
-  const toggleDatasetBtn = document.getElementById('toggleDataset');
-  const examModeBtn = document.getElementById('examModeBtn');
+  function clampScore(v) {
+    return Math.min(SCORE_MAX, Math.max(SCORE_MIN, v));
+  }
+
+  function levelFromScore(score) {
+    if (score <= 10) return 'A1';
+    if (score <= 20) return 'A2';
+    if (score <= 40) return 'B1';
+    if (score <= 70) return 'B2';
+    if (score <= 90) return 'C1';
+    return 'C2';
+  }
+
+  function levelUpperBound(level) {
+    return { A1:10, A2:20, B1:40, B2:70, C1:90, C2:100 }[level];
+  }
+
+  function normalize(t) {
+    return t.toLowerCase().replace(/[^a-z']/g,' ').replace(/\s+/g,' ').trim();
+  }
+
+  function normalizeVowel(w) {
+    return w.replace(/ee|ea|ie|ei|i/g,'i')
+            .replace(/a|e/g,'a')
+            .replace(/o|u/g,'o');
+  }
 
   /* =======================
      TTS
@@ -70,8 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function pickEnglishVoice() {
     const voices = speechSynthesis.getVoices();
-    selectedVoice =
-      voices.find(v => v.lang === 'en-US') || null;
+    selectedVoice = voices.find(v => v.lang === 'en-US') || null;
   }
 
   speechSynthesis.onvoiceschanged = pickEnglishVoice;
@@ -90,50 +125,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.speakWord = speakText;
 
   /* =======================
-     UTIL
-  ======================= */
-
-  function clampScore(v) {
-    return Math.min(SCORE_MAX, Math.max(SCORE_MIN, v));
-  }
-
-  // ✅ NÍVEIS — EXATAMENTE COMO DEFINIDO
-  function levelFromScore(score) {
-    if (score <= 10) return 'A1';
-    if (score >= 11 && score <= 20) return 'A2';
-    if (score >= 21 && score <= 40) return 'B1';
-    if (score >= 41 && score <= 70) return 'B2';
-    if (score >= 71 && score <= 90) return 'C1';
-    if (score >= 91) return 'C2';
-  }
-
-  function levelUpperBound(level) {
-    return { A1:10, A2:20, B1:40, B2:70, C1:90, C2:100 }[level];
-  }
-
-  function normalize(t) {
-    return t.toLowerCase()
-      .replace(/[^a-z']/g,' ')
-      .replace(/\s+/g,' ')
-      .trim();
-  }
-
-  function normalizeVowel(w) {
-    return w
-      .replace(/ee|ea|ie|ei|i/g,'i')
-      .replace(/a|e/g,'a')
-      .replace(/o|u/g,'o');
-  }
-
-  /* =======================
      MODELO ROBUSTO
   ======================= */
 
   function updateRecent(isHit) {
     stats.recent.push(isHit);
-    if (stats.recent.length > WINDOW_SIZE) {
-      stats.recent.shift();
-    }
+    if (stats.recent.length > WINDOW_SIZE) stats.recent.shift();
   }
 
   function recentAccuracy() {
@@ -157,7 +154,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? SCORE_RULES.hits[stats.level]
       : SCORE_RULES.errors[stats.level];
 
-    // Proteção contra erro do STT
     if (!isHit && accuracy >= 0.9) delta = 0;
 
     stats.score = clampScore(stats.score + delta);
@@ -169,13 +165,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const acc = recentAccuracy();
     const upper = levelUpperBound(stats.level);
 
-    // Subida com histerese
     if (stats.score >= upper && acc >= 0.75 && stats.streak >= 3) {
       stats.level = levelFromScore(stats.score);
-      return;
     }
 
-    // Regressão controlada
     if (
       stats.score < upper - 10 &&
       acc < 0.55 &&
@@ -191,20 +184,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   onAuthStateChanged(auth, async user => {
     if (!user) return;
-
     userRef = doc(db, 'users', user.uid);
 
-    try {
-      const snap = await getDoc(userRef);
-      if (snap.exists()) {
-        const saved = snap.data();
-        stats = { ...stats, ...(saved.stats || {}) };
-        datasetKey = saved.datasetKey || datasetKey;
-        examMode = saved.examMode || false;
-      }
-      firebaseReady = true;
-    } catch {}
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+      const saved = snap.data();
+      stats = { ...stats, ...(saved.stats || {}) };
+      datasetKey = saved.datasetKey || datasetKey;
+      examMode = saved.examMode || false;
+    }
 
+    firebaseReady = true;
     stats.score = clampScore(stats.score);
     stats.level = levelFromScore(stats.score);
     init();
@@ -243,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function nextSentence() {
     const filtered = data.filter(d => d.CEFR === stats.level);
     current = filtered[Math.floor(Math.random() * filtered.length)];
-    englishText.innerHTML = examMode ? '🎧 Ouça e repita' : current.ENG;
+    englishText.textContent = examMode ? '🎧 Ouça e repita' : current.ENG;
     translationText.textContent = current.PTBR;
     translationText.classList.add('hidden');
     feedback.textContent = '';
@@ -319,7 +309,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     UI
+     UI / SAVE
   ======================= */
 
   function toggleDataset() {
@@ -338,15 +328,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function resetProgress() {
     if (!confirm('Deseja apagar todo o progresso?')) return;
-    stats = {
-      level:'A1',
-      score:0,
-      hits:0,
-      errors:0,
-      streak:0,
-      recent:[],
-      weights:{}
-    };
+    stats = { level:'A1', score:0, hits:0, errors:0, streak:0, recent:[], weights:{} };
     datasetKey = 'frases';
     examMode = false;
     saveAll();
@@ -369,4 +351,3 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
 });
-</script>
