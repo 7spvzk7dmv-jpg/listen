@@ -64,18 +64,25 @@ document.addEventListener('DOMContentLoaded', async () => {
      UTIL
   ======================= */
 
-  function clampScore(value) {
-    if (!Number.isFinite(value)) return SCORE_MIN;
-    return Math.min(SCORE_MAX, Math.max(SCORE_MIN, value));
+  function clampScore(v) {
+    return Math.min(SCORE_MAX, Math.max(SCORE_MIN, v));
   }
 
-  function levelFromScore(score) {
-    if (score <= 30) return 'A1';
-    if (score <= 60) return 'A2';
-    if (score <= 70) return 'B1';
-    if (score <= 80) return 'B2';
-    if (score <= 90) return 'C1';
-    return 'C2'; // >= 91
+  function levelFromScore(s) {
+    if (s <= 30) return 'A1';
+    if (s <= 60) return 'A2';
+    if (s <= 70) return 'B1';
+    if (s <= 80) return 'B2';
+    if (s <= 90) return 'C1';
+    return 'C2';
+  }
+
+  function normalize(t) {
+    return t
+      .toLowerCase()
+      .replace(/[^a-z']/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   /* =======================
@@ -100,7 +107,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.warn('⚠️ Firestore indisponível');
     }
 
-    // 🔒 NORMALIZAÇÃO ABSOLUTA DO ESTADO
     stats.score = clampScore(stats.score);
     stats.level = levelFromScore(stats.score);
 
@@ -119,9 +125,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function bindEvents() {
-    playBtn.onclick = speakSentence;
+    playBtn.onclick = () => current && speakText(current.ENG);
     micBtn.onclick = listen;
-    translateBtn.onclick = toggleTranslation;
+    translateBtn.onclick = () => translationText.classList.toggle('hidden');
     nextBtn.onclick = nextSentence;
     resetBtn.onclick = resetProgress;
     toggleDatasetBtn.onclick = toggleDataset;
@@ -138,7 +144,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const v = speechSynthesis.getVoices();
       selectedVoice =
         v.find(x => preferred.includes(x.name) && x.lang.startsWith('en')) ||
-        v.find(x => x.lang === 'en-US') || v[0];
+        v.find(x => x.lang === 'en-US') ||
+        v[0];
     };
     pick();
     speechSynthesis.onvoiceschanged = pick;
@@ -154,8 +161,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     speechSynthesis.speak(u);
   }
 
-  function speakSentence(){ if(current) speakText(current.ENG); }
-  function speakWord(w){ speakText(w); }
+  window.speakWord = speakText; // necessário para onclick inline
 
   /* =======================
      DATASET
@@ -165,7 +171,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const r = await fetch(DATASETS[datasetKey]);
     data = await r.json();
     nextSentence();
-    updateUI();
   }
 
   function weightedRandom(items) {
@@ -180,28 +185,43 @@ document.addEventListener('DOMContentLoaded', async () => {
   function nextSentence() {
     const filtered = data.filter(d => d.CEFR === stats.level);
     current = weightedRandom(filtered.length ? filtered : data);
-    englishText.textContent = examMode ? '🎧 Ouça e repita' : current.ENG;
+
+    englishText.innerHTML = examMode
+      ? '🎧 Ouça e repita'
+      : current.ENG;
+
     translationText.textContent = current.PTBR;
     translationText.classList.add('hidden');
     feedback.textContent = '';
   }
 
   /* =======================
+     DIFF & RENDER
+  ======================= */
+
+  function diffWords(spoken, target) {
+    const s = spoken.split(' ');
+    const t = target.split(' ');
+
+    return t.map((word, i) => ({
+      word,
+      ok: s[i] === word
+    }));
+  }
+
+  function renderDiff(diff) {
+    englishText.innerHTML = diff.map(w =>
+      w.ok
+        ? w.word
+        : `<span class="wrong" onclick="speakWord('${w.word}')">${w.word}</span>`
+    ).join(' ');
+  }
+
+  /* =======================
      STT
   ======================= */
 
-  function normalize(t) {
-    return t.toLowerCase().replace(/[^a-z']/g,' ').replace(/\s+/g,' ').trim();
-  }
-
-  function similarity(a,b) {
-    let s = 0;
-    for (let i = 0; i < Math.min(a.length,b.length); i++)
-      if (a[i] === b[i]) s++;
-    return s / Math.max(a.length,b.length);
-  }
-
-  function adjustLevelByScore(success) {
+  function adjustLevel(success) {
     const delta = success
       ? SCORE_RULES.hits[current.CEFR]
       : SCORE_RULES.errors[current.CEFR];
@@ -225,16 +245,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     r.onresult = e => {
       const spoken = normalize(e.results[0][0].transcript);
       const target = normalize(current.ENG);
-      const sc = similarity(spoken, target);
 
-      if (sc >= 0.75) {
+      const diff = diffWords(spoken, target);
+      const accuracy = diff.filter(w => w.ok).length / diff.length;
+
+      if (accuracy >= 0.75) {
         feedback.textContent = '✅ Boa pronúncia';
         stats.hits++;
-        adjustLevelByScore(true);
+        adjustLevel(true);
       } else {
-        feedback.textContent = '❌ Atenção às palavras';
+        feedback.textContent = '❌ Clique nas palavras destacadas';
         stats.errors++;
-        adjustLevelByScore(false);
+        adjustLevel(false);
+        if (!examMode) renderDiff(diff);
       }
 
       saveAll();
@@ -248,15 +271,11 @@ document.addEventListener('DOMContentLoaded', async () => {
      UI
   ======================= */
 
-  function toggleTranslation() {
-    translationText.classList.toggle('hidden');
-  }
-
   function toggleDataset() {
     datasetKey = datasetKey === 'frases' ? 'palavras' : 'frases';
-    toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
     saveAll();
     loadDataset();
+    updateUI();
   }
 
   function toggleExamMode() {
@@ -277,11 +296,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       weights: {}
     };
 
-    examMode = false;
     datasetKey = 'frases';
+    examMode = false;
 
     saveAll();
     loadDataset();
+    updateUI();
   }
 
   function updateUI() {
