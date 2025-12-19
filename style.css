@@ -1,4 +1,6 @@
-/* ===== RESET ===== */
+/* =====================
+   RESET / BASE
+===================== */
 
 * {
   box-sizing: border-box;
@@ -7,7 +9,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: linear-gradient(160deg, #0f172a, #020617);
+  background: linear-gradient(160deg, #0b0f19, #020617);
   color: #e5e7eb;
   display: flex;
   justify-content: center;
@@ -16,21 +18,25 @@ body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* ===== APP CARD ===== */
+/* =====================
+   APP CARD
+===================== */
 
 .app {
   width: 100%;
   max-width: 520px;
-  background: #020617;
-  border-radius: 24px;
+  background: #111827;
+  border-radius: 22px;
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  box-shadow: 0 40px 80px rgba(0,0,0,.6);
+  gap: 22px;
+  box-shadow: 0 40px 90px rgba(0,0,0,.65);
 }
 
-/* ===== TOP ===== */
+/* =====================
+   TOP BAR
+===================== */
 
 .app-top {
   display: flex;
@@ -41,6 +47,7 @@ body {
 .app-top h1 {
   margin: 0;
   font-size: 22px;
+  font-weight: 600;
 }
 
 .top-actions {
@@ -49,28 +56,44 @@ body {
   flex-wrap: wrap;
 }
 
-/* ===== PILLS ===== */
+/* =====================
+   BUTTON SYSTEM
+===================== */
 
+/* Base */
+button {
+  font-family: inherit;
+}
+
+/* Chips (top bar) */
 .pill {
   padding: 6px 14px;
   border-radius: 999px;
-  border: none;
-  background: #1e293b;
-  color: inherit;
+  border: 1px solid #1f2937;
+  background: #020617;
+  color: #e5e7eb;
   font-size: 13px;
   cursor: pointer;
   white-space: nowrap;
 }
 
 .pill:hover {
-  background: #334155;
+  background: #111827;
 }
 
+/* Danger pill */
 .pill.danger {
+  border-color: #7f1d1d;
+  color: #fecaca;
+}
+
+.pill.danger:hover {
   background: #7f1d1d;
 }
 
-/* ===== TRAINER ===== */
+/* =====================
+   MAIN CONTENT
+===================== */
 
 .trainer {
   text-align: center;
@@ -86,17 +109,19 @@ body {
 }
 
 .translation {
-  color: #94a3b8;
+  color: #9ca3af;
   font-size: 15px;
 }
 
 .status {
   font-size: 13px;
-  color: #94a3b8;
+  color: #9ca3af;
   font-family: monospace;
 }
 
-/* ===== PRIMARY ACTION ===== */
+/* =====================
+   PRIMARY ACTION
+===================== */
 
 .primary-action {
   display: flex;
@@ -107,18 +132,22 @@ body {
   width: 140px;
   height: 140px;
   border-radius: 50%;
-  background: radial-gradient(circle at top, #10b981, #059669);
   border: none;
+  background: linear-gradient(180deg, #10b981, #059669);
+  color: #022c22;
   font-size: 18px;
+  font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 10px 30px rgba(16,185,129,.4);
+  box-shadow: 0 12px 40px rgba(16,185,129,.45);
 }
 
 .mic:hover {
   transform: scale(1.04);
 }
 
-/* ===== ACTIONS ===== */
+/* =====================
+   SECONDARY ACTIONS
+===================== */
 
 .actions {
   display: grid;
@@ -128,18 +157,21 @@ body {
 
 .btn {
   padding: 12px;
-  border-radius: 12px;
-  border: none;
-  background: #1e293b;
-  color: inherit;
+  border-radius: 14px;
+  border: 1px solid #1f2937;
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 14px;
   cursor: pointer;
 }
 
 .btn:hover {
-  background: #334155;
+  background: #111827;
 }
 
-/* ===== FEEDBACK ===== */
+/* =====================
+   FEEDBACK
+===================== */
 
 .feedback {
   text-align: center;
@@ -147,10 +179,12 @@ body {
 }
 
 .score {
-  color: #94a3b8;
+  color: #9ca3af;
 }
 
-/* ===== FOOTER ===== */
+/* =====================
+   FOOTER
+===================== */
 
 .footer {
   text-align: center;
@@ -168,7 +202,9 @@ body {
   text-decoration: underline;
 }
 
-/* ===== UTIL ===== */
+/* =====================
+   UTIL
+===================== */
 
 .hidden {
   display: none;
@@ -179,4 +215,8 @@ body {
   cursor: pointer;
   font-weight: 600;
   text-decoration: underline;
+}
+
+.wrong:hover {
+  color: #fda4af;
 }
