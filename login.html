@@ -10,34 +10,52 @@
 
 <body>
 
-  <main class="card auth">
+  <main class="app auth">
 
-    <header class="auth-header">
+    <!-- HEADER -->
+    <header class="app-top">
       <h1>English Trainer</h1>
-      <p>Entre para continuar seu treino</p>
     </header>
 
-    <section class="auth-form">
+    <!-- CONTENT -->
+    <section class="trainer">
+
+      <p class="prompt" style="font-size:22px;">
+        Acesse sua conta
+      </p>
+
       <input id="email" type="email" placeholder="E-mail" />
       <input id="password" type="password" placeholder="Senha" />
 
+    </section>
+
+    <!-- ACTIONS -->
+    <section class="actions" style="grid-template-columns: 1fr;">
       <button id="loginBtn" class="btn primary">Entrar</button>
       <button id="registerBtn" class="btn">Criar conta</button>
     </section>
 
+    <!-- DIVIDER -->
     <div class="divider">
       <span>OU</span>
     </div>
 
-    <button id="googleBtn" class="btn google">
-      <img
-        src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-        alt="Google"
-      />
-      Entrar com Google
-    </button>
+    <!-- GOOGLE -->
+    <section class="actions" style="grid-template-columns: 1fr;">
+      <button id="googleBtn" class="btn google">
+        <img
+          src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+          alt="Google"
+          style="width:18px;height:18px;"
+        />
+        Entrar com Google
+      </button>
+    </section>
 
-    <p id="msg" class="error"></p>
+    <!-- ERROR -->
+    <section class="feedback">
+      <p id="msg" style="color:#fb7185;"></p>
+    </section>
 
   </main>
 
