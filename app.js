@@ -83,24 +83,53 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     NORMALIZAÇÃO FONÉTICA
+     NORMALIZAÇÃO / FONÉTICA REAL
   ======================= */
-  function normalize(t) {
+
+  function normalizeText(t) {
     return t.toLowerCase()
-      .replace(/[^a-z']/g,' ')
-      .replace(/\s+/g,' ')
+      .replace(/[^a-z]/g, '')
       .trim();
   }
 
-  function phonetic(w) {
-    return w
-      .replace(/ph/g,'f')
-      .replace(/ck|c/g,'k')
-      .replace(/qu/g,'k')
-      .replace(/ee|ea|ie|ei|y/g,'i')
-      .replace(/oo|ou|u/g,'o')
-      .replace(/a|e/g,'a')
-      .replace(/(.)\1+/g,'$1');
+  function phoneticShape(word) {
+    let w = normalizeText(word);
+
+    // ditongos e vogais longas
+    w = w
+      .replace(/igh|eye|aye/g, 'ai')
+      .replace(/ai|ay|ei|ey|igh/g, 'ai')
+      .replace(/ow|ou|au|aw/g, 'au')
+      .replace(/oo|ou|u/g, 'u')
+      .replace(/ee|ea|ie|ei|i|y/g, 'i')
+      .replace(/oa|o|a/g, 'a');
+
+    // consoantes próximas
+    w = w
+      .replace(/ph/g, 'f')
+      .replace(/ck|c|q/g, 'k')
+      .replace(/v/g, 'f')
+      .replace(/z/g, 's')
+      .replace(/d/g, 't')
+      .replace(/b/g, 'p')
+      .replace(/x/g, 'ks');
+
+    // remove letras mudas comuns
+    w = w
+      .replace(/^kn/, 'n')
+      .replace(/^wr/, 'r')
+      .replace(/gh$/, '')
+      .replace(/e$/, '');
+
+    // colapsa repetições
+    w = w.replace(/(.)\1+/g, '$1');
+
+    return w;
+  }
+
+  function isPhoneticallySame(a, b) {
+    if (!a || !b) return false;
+    return phoneticShape(a) === phoneticShape(b);
   }
 
   /* =======================
@@ -194,13 +223,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     return t.map(word => {
       let ok = false;
+
       for (let j = si; j <= si + 1 && j < s.length; j++) {
-        if (s[j] === word || phonetic(s[j]) === phonetic(word)) {
+        if (isPhoneticallySame(s[j], word)) {
           ok = true;
           si = j + 1;
           break;
         }
       }
+
       return { word, ok };
     });
   }
@@ -224,8 +255,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     r.lang = 'en-US';
 
     r.onresult = e => {
-      const spoken = normalize(e.results[0][0].transcript);
-      const target = normalize(current.ENG);
+      const spoken = e.results[0][0].transcript.toLowerCase();
+      const target = current.ENG.toLowerCase();
 
       const diff = diffWords(spoken, target);
       const accuracy = diff.filter(w => w.ok).length / diff.length;
