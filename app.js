@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     speechSynthesis.speak(u);
   }
 
-  window.speakWord = speakText; // necessário para onclick inline
+  window.speakWord = speakText;
 
   /* =======================
      DATASET
@@ -196,17 +196,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     DIFF & RENDER
+     DIFF COM TOLERÂNCIA
   ======================= */
 
   function diffWords(spoken, target) {
     const s = spoken.split(' ');
     const t = target.split(' ');
 
-    return t.map((word, i) => ({
-      word,
-      ok: s[i] === word
-    }));
+    let si = 0;
+
+    return t.map(word => {
+      let ok = false;
+
+      for (let j = si; j <= si + 1 && j < s.length; j++) {
+        if (s[j] === word) {
+          ok = true;
+          si = j + 1;
+          break;
+        }
+      }
+
+      return { word, ok };
+    });
   }
 
   function renderDiff(diff) {
@@ -249,7 +260,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const diff = diffWords(spoken, target);
       const accuracy = diff.filter(w => w.ok).length / diff.length;
 
-      if (accuracy >= 0.75) {
+      if (accuracy >= 0.6) {
         feedback.textContent = '✅ Boa pronúncia';
         stats.hits++;
         adjustLevel(true);
