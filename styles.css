@@ -1,0 +1,243 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #18181b; /* zinc-900 */
+  color: #f4f4f5;      /* zinc-100 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* =====================
+   CONTAINERS
+===================== */
+
+.app,
+.auth-box {
+  width: 100%;
+  background: #27272a; /* zinc-800 */
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.app {
+  max-width: 520px;
+}
+
+.auth-box {
+  max-width: 380px;
+}
+
+/* =====================
+   HEADER / TITLES
+===================== */
+
+h1 {
+  margin: 0;
+  font-size: 20px;
+  text-align: center;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* =====================
+   TEXT CONTENT
+===================== */
+
+.content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.english {
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.translation {
+  color: #a1a1aa;
+}
+
+.level {
+  font-size: 13px;
+  color: #a1a1aa;
+  font-family: monospace;
+}
+
+/* =====================
+   INPUTS
+===================== */
+
+input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: #3f3f46; /* zinc-700 */
+  color: inherit;
+  outline: none;
+  font-size: 14px;
+}
+
+input::placeholder {
+  color: #a1a1aa;
+}
+
+/* =====================
+   BUTTONS
+===================== */
+
+.btn {
+  background: #3f3f46;
+  color: inherit;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn:hover {
+  background: #52525b;
+}
+
+.btn-primary {
+  background: #059669; /* emerald-600 */
+}
+
+.btn-primary:hover {
+  background: #10b981;
+}
+
+.btn-secondary {
+  background: #52525b;
+}
+
+.btn-danger {
+  background: #dc2626;
+}
+
+.btn-danger:hover {
+  background: #ef4444;
+}
+
+.btn-google {
+  background: #ffffff;
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-google:hover {
+  background: #e5e7eb;
+}
+
+/* =====================
+   CONTROLS / SECTIONS
+===================== */
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.feedback {
+  text-align: center;
+  font-size: 14px;
+}
+
+.reset {
+  text-align: center;
+}
+
+/* =====================
+   LINKS / TEXT
+===================== */
+
+.link-danger {
+  background: none;
+  border: none;
+  color: #f87171;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.link-danger:hover {
+  text-decoration: underline;
+}
+
+.small {
+  font-size: 12px;
+  color: #a1a1aa;
+  text-align: center;
+}
+
+/* =====================
+   DIVIDER
+===================== */
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #52525b;
+}
+
+/* =====================
+   UTIL
+===================== */
+
+.hidden {
+  display: none;
+}
+
+/* =====================
+   WRONG WORD
+===================== */
+
+.wrong {
+  color: #f87171;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.wrong:hover {
+  color: #fca5a5;
+}
