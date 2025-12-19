@@ -93,9 +93,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function levelFromScore(score) {
     if (score <= 20) return 'A1';
-    if (score >= 21 && score <= 50) return 'A2';
-    if (score >= 51 && score <= 70) return 'B1';
-    if (score >= 71 && score <= 80) return 'B2';
+    if (score >= 21 && score <= 40) return 'A2';
+    if (score >= 41 && score <= 60) return 'B1';
+    if (score >= 61 && score <= 80) return 'B2';
     if (score >= 81 && score <= 90) return 'C1';
     if (score >= 91) return 'C2';
   }
