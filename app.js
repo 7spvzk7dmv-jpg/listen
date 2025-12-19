@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const SCORE_MIN = 0;
   const SCORE_MAX = 100;
 
+  const WINDOW_SIZE = 10;
+
   let datasetKey = 'frases';
   let data = [];
   let current = null;
@@ -35,6 +37,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     score: 0,
     hits: 0,
     errors: 0,
+    streak: 0,
+    recent: [],
     weights: {}
   };
 
@@ -52,35 +56,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const examModeBtn = document.getElementById('examModeBtn');
 
   /* =======================
-     TTS
-  ======================= */
-
-  let selectedVoice = null;
-
-  function pickEnglishVoice() {
-    const voices = speechSynthesis.getVoices();
-    selectedVoice =
-      voices.find(v => v.lang === 'en-US' && /Google|Daniel|Samantha|Aaron/i.test(v.name)) ||
-      voices.find(v => v.lang === 'en-US') ||
-      null;
-  }
-
-  speechSynthesis.onvoiceschanged = pickEnglishVoice;
-  pickEnglishVoice();
-
-  function speakText(text) {
-    if (!selectedVoice) return;
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.voice = selectedVoice;
-    u.lang = 'en-US';
-    u.rate = 0.9;
-    speechSynthesis.speak(u);
-  }
-
-  window.speakWord = speakText;
-
-  /* =======================
      UTIL
   ======================= */
 
@@ -88,7 +63,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     return Math.min(SCORE_MAX, Math.max(SCORE_MIN, v));
   }
 
-  // 🔴 FUNÇÃO ORIGINAL RESTAURADA
   function levelFromScore(score) {
     if (score <= 10) return 'A1';
     if (score >= 11 && score <= 20) return 'A2';
@@ -109,6 +83,67 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/o|u/g,'o');
   }
 
+  function updateRecent(isHit) {
+    stats.recent.push(isHit);
+    if (stats.recent.length > WINDOW_SIZE) {
+      stats.recent.shift();
+    }
+  }
+
+  function recentAccuracy() {
+    if (stats.recent.length === 0) return 1;
+    return stats.recent.filter(Boolean).length / stats.recent.length;
+  }
+
+  function applyStreak(isHit) {
+    if (isHit) {
+      stats.streak++;
+      if (stats.streak === 3) stats.score += 1;
+      if (stats.streak === 5) stats.score += 2;
+      if (stats.streak >= 8) stats.score += 1;
+    } else {
+      stats.streak = 0;
+    }
+  }
+
+  function applyScore(isHit, accuracy) {
+    let delta = isHit
+      ? SCORE_RULES.hits[stats.level]
+      : SCORE_RULES.errors[stats.level];
+
+    // Proteção contra STT injusto
+    if (!isHit && accuracy >= 0.9) {
+      delta = 0;
+    }
+
+    stats.score = clampScore(stats.score + delta);
+    applyStreak(isHit);
+    stats.score = clampScore(stats.score);
+  }
+
+  function evaluateLevel() {
+    const acc = recentAccuracy();
+
+    // Subida com histerese
+    if (
+      stats.score >= SCORE_MAX &&
+      acc >= 0.75 &&
+      stats.streak >= 3
+    ) {
+      stats.level = levelFromScore(stats.score);
+      return;
+    }
+
+    // Regressão controlada
+    if (
+      stats.score <= SCORE_MIN &&
+      acc < 0.55 &&
+      stats.recent.slice(-5).filter(v => !v).length >= 3
+    ) {
+      stats.level = levelFromScore(stats.score);
+    }
+  }
+
   /* =======================
      AUTH
   ======================= */
@@ -122,7 +157,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const snap = await getDoc(userRef);
       if (snap.exists()) {
         const saved = snap.data();
-        stats = saved.stats || stats;
+        stats = { ...stats, ...(saved.stats || {}) };
         datasetKey = saved.datasetKey || datasetKey;
         examMode = saved.examMode || false;
       }
@@ -174,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     STT + SCORE
+     STT
   ======================= */
 
   function diffWords(spoken, target) {
@@ -207,15 +242,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     ).join(' ');
   }
 
-  function applyScore(isHit) {
-    const delta = isHit
-      ? SCORE_RULES.hits[stats.level]
-      : SCORE_RULES.errors[stats.level];
-
-    stats.score = clampScore(stats.score + delta);
-    stats.level = levelFromScore(stats.score);
-  }
-
   function listen() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR || !current) return;
@@ -229,15 +255,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const diff = diffWords(spoken, target);
       const accuracy = diff.filter(w => w.ok).length / diff.length;
+      const isHit = accuracy >= 0.6;
 
-      if (accuracy >= 0.6) {
+      updateRecent(isHit);
+      applyScore(isHit, accuracy);
+      evaluateLevel();
+
+      if (isHit) {
         feedback.textContent = '✅ Boa pronúncia';
         stats.hits++;
-        applyScore(true);
       } else {
         feedback.textContent = '❌ Clique nas palavras destacadas';
         stats.errors++;
-        applyScore(false);
         if (!examMode) renderDiff(diff);
       }
 
@@ -268,7 +297,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function resetProgress() {
     if (!confirm('Deseja apagar todo o progresso?')) return;
-    stats = { level:'A1', score:0, hits:0, errors:0, weights:{} };
+    stats = {
+      level:'A1',
+      score:0,
+      hits:0,
+      errors:0,
+      streak:0,
+      recent:[],
+      weights:{}
+    };
     datasetKey = 'frases';
     examMode = false;
     saveAll();
@@ -279,7 +316,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   function updateUI() {
     hitsEl.textContent = stats.hits;
     errorsEl.textContent = stats.errors;
-    levelText.textContent = `Nível: ${stats.level} | Pontos: ${stats.score}`;
+    levelText.textContent =
+      `Nível: ${stats.level} | Pontos: ${stats.score} | Streak: ${stats.streak}`;
     examModeBtn.textContent = examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
     toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
   }
