@@ -1,42 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
 
   /* =======================
-     STYLE INJECTION (VISUAL)
-  ======================= */
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes pulseWrong {
-      0% { background-color: rgba(248,113,113,0.15); }
-      50% { background-color: rgba(248,113,113,0.35); }
-      100% { background-color: rgba(248,113,113,0.15); }
-    }
-    .wrong {
-      color: #f87171;
-      cursor: pointer;
-      font-weight: 600;
-      text-decoration: underline;
-      padding: 0 2px;
-      border-radius: 4px;
-      animation: pulseWrong 1.5s ease-in-out infinite;
-    }
-    .flash-hit {
-      animation: flashHit 0.6s ease-out;
-    }
-    .flash-error {
-      animation: flashError 0.6s ease-out;
-    }
-    @keyframes flashHit {
-      from { background-color: rgba(34,197,94,0.25); }
-      to { background-color: transparent; }
-    }
-    @keyframes flashError {
-      from { background-color: rgba(248,113,113,0.25); }
-      to { background-color: transparent; }
-    }
-  `;
-  document.head.appendChild(style);
-
-  /* =======================
      FIREBASE
   ======================= */
   const { onAuthStateChanged } =
@@ -69,7 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const levelText = document.getElementById('levelText');
 
   /* =======================
-     CONFIG / STATE
+     CONFIG
   ======================= */
   const DATASETS = {
     frases: 'data/frases.json',
@@ -85,6 +49,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const SCORE_MAX = 100;
   const WINDOW_SIZE = 10;
 
+  /* =======================
+     ESTADO
+  ======================= */
   let datasetKey = 'frases';
   let data = [];
   let current = null;
@@ -119,7 +86,10 @@ document.addEventListener('DOMContentLoaded', async () => {
      NORMALIZAÇÃO FONÉTICA
   ======================= */
   function normalize(t) {
-    return t.toLowerCase().replace(/[^a-z']/g,' ').replace(/\s+/g,' ').trim();
+    return t.toLowerCase()
+      .replace(/[^a-z']/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
   }
 
   function phonetic(w) {
@@ -174,10 +144,12 @@ document.addEventListener('DOMContentLoaded', async () => {
      TTS
   ======================= */
   let selectedVoice = null;
+
   function pickEnglishVoice() {
     const voices = speechSynthesis.getVoices();
     selectedVoice = voices.find(v => v.lang === 'en-US') || null;
   }
+
   speechSynthesis.onvoiceschanged = pickEnglishVoice;
   pickEnglishVoice();
 
@@ -189,6 +161,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     u.lang = 'en-US';
     speechSynthesis.speak(u);
   }
+
   window.speakWord = speakText;
 
   /* =======================
@@ -203,18 +176,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   function nextSentence() {
     const filtered = data.filter(d => d.CEFR === stats.level);
     if (!filtered.length) return;
+
     current = filtered[Math.floor(Math.random() * filtered.length)];
 
-    englishText.classList.remove('flash-hit','flash-error');
-    englishText.innerHTML = examMode ? '🎧 Ouça e repita' : current.ENG;
+    englishText.className =
+      'text-2xl font-medium leading-relaxed select-text text-zinc-100';
 
+    englishText.textContent = examMode ? '🎧 Ouça e repita' : current.ENG;
     translationText.textContent = current.PTBR;
     translationText.classList.add('hidden');
     feedback.textContent = '';
   }
 
   /* =======================
-     DIFF + RENDER (VISUAL)
+     DIFF + HIGHLIGHT (SAFARI SAFE)
   ======================= */
   function diffWords(spoken, target) {
     const s = spoken.split(' ');
@@ -238,7 +213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     englishText.innerHTML = diff.map(w =>
       w.ok
         ? `<span>${w.word}</span>`
-        : `<span class="wrong" onclick="speakWord('${w.word}')">${w.word}</span>`
+        : `<span class="wrong bg-red-500/20 rounded px-1" onclick="speakWord('${w.word}')">${w.word}</span>`
     ).join(' ');
   }
 
@@ -270,17 +245,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       stats.score = clampScore(stats.score + delta);
       evaluateLevel();
 
-      englishText.classList.remove('flash-hit','flash-error');
-      void englishText.offsetWidth;
-
       if (isHit) {
         stats.hits++;
         feedback.textContent = '✅ Boa pronúncia';
-        englishText.classList.add('flash-hit');
+        englishText.classList.add('bg-green-500/20');
+        setTimeout(() => englishText.classList.remove('bg-green-500/20'), 300);
       } else {
         stats.errors++;
         feedback.textContent = '❌ Clique nas palavras erradas';
-        englishText.classList.add('flash-error');
+        englishText.classList.add('bg-red-500/20');
+        setTimeout(() => englishText.classList.remove('bg-red-500/20'), 300);
         if (!examMode) renderDiff(diff);
       }
 
@@ -330,6 +304,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   ======================= */
   onAuthStateChanged(auth, async user => {
     if (!user) return;
+
     userRef = doc(db, 'users', user.uid);
     const snap = await getDoc(userRef);
     if (snap.exists()) {
@@ -338,6 +313,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       datasetKey = saved.datasetKey || datasetKey;
       examMode = saved.examMode || false;
     }
+
     firebaseReady = true;
     stats.score = clampScore(stats.score);
     stats.level = levelFromScore(stats.score);
