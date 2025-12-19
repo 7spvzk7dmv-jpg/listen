@@ -13,8 +13,8 @@ html, body {
 
 body {
   min-height: 100vh;
-  background: #18181b; /* zinc-900 */
-  color: #f4f4f5;      /* zinc-100 */
+  background: #18181b;
+  color: #f4f4f5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -29,17 +29,15 @@ body {
 .app,
 .auth-box {
   width: 100%;
-  background: #27272a; /* zinc-800 */
+  max-width: 520px;
+  background: #27272a;
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 20px 40px rgba(0,0,0,.45);
   display: flex;
   flex-direction: column;
   gap: 20px;
-}
-
-.app {
-  max-width: 520px;
+  overflow: hidden; /* 🔒 impede vazamento */
 }
 
 .auth-box {
@@ -52,21 +50,23 @@ body {
 
 .header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 12px;
-  flex-wrap: nowrap;
+  width: 100%;
 }
 
 .header h1 {
   font-size: 20px;
   margin: 0;
+  flex-shrink: 0;
 }
 
 .header-actions {
   display: flex;
   gap: 8px;
-  flex-wrap: nowrap;
+  margin-left: auto;
+  min-width: 0;          /* 🔑 permite encolher */
+  overflow: hidden;     /* 🔑 impede sair do box */
 }
 
 /* =====================
@@ -105,7 +105,7 @@ input {
   padding: 10px 12px;
   border-radius: 10px;
   border: none;
-  background: #3f3f46; /* zinc-700 */
+  background: #3f3f46;
   color: inherit;
   font-size: 14px;
   outline: none;
@@ -127,7 +127,11 @@ input::placeholder {
   border-radius: 10px;
   cursor: pointer;
   font-size: 14px;
+
   white-space: nowrap;
+  max-width: 160px;           /* 🔒 limite visual */
+  overflow: hidden;
+  text-overflow: ellipsis;    /* ✂️ corta bonito */
 }
 
 .btn:hover {
@@ -135,7 +139,7 @@ input::placeholder {
 }
 
 .btn-primary {
-  background: #059669; /* emerald-600 */
+  background: #059669;
 }
 
 .btn-primary:hover {
@@ -179,14 +183,10 @@ input::placeholder {
 }
 
 /* =====================
-   FEEDBACK
+   FEEDBACK / STATS
 ===================== */
 
-.feedback {
-  text-align: center;
-  font-size: 14px;
-}
-
+.feedback,
 .stats {
   text-align: center;
   font-size: 14px;
@@ -241,7 +241,7 @@ input::placeholder {
 }
 
 /* =====================
-   WRONG WORD (CLICKABLE)
+   WRONG WORD
 ===================== */
 
 .wrong {
