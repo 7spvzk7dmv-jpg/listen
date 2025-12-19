@@ -24,16 +24,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     palavras: 'data/palavras.json'
   };
 
-  const levels = ['A1', 'A2', 'B1', 'B2', 'C1'];
+  const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
+  const SCORE_RULES = {
+    hits: {
+      A1: 1,
+      A2: 3,
+      B1: 5,
+      B2: 7,
+      C1: 9,
+      C2: 10
+    },
+    errors: {
+      A1: -10,
+      A2: -8,
+      B1: -6,
+      B2: -4,
+      C1: -2,
+      C2: -1
+    }
+  };
 
   let datasetKey = 'frases';
   let data = [];
   let current = null;
-
   let examMode = false;
 
   let stats = {
     level: 'A1',
+    score: 0,
     hits: 0,
     errors: 0,
     weights: {}
@@ -72,7 +91,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         examMode = saved.examMode || false;
       }
       firebaseReady = true;
-    } catch (e) {
+    } catch {
       console.warn('⚠️ Firestore indisponível, usando memória local');
     }
 
@@ -101,7 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     VOZ (TTS) — ANDROID / IOS
+     VOZ (TTS)
   ======================= */
 
   function initVoices() {
@@ -130,14 +149,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     u.lang = 'en-US';
     if (selectedVoice) u.voice = selectedVoice;
     u.rate = 0.95;
-    u.pitch = 1.0;
 
     speechSynthesis.speak(u);
   }
 
   function speakSentence() {
-    if (!current) return;
-    speakText(current.ENG);
+    if (current) speakText(current.ENG);
   }
 
   function speakWord(word) {
@@ -152,7 +169,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const res = await fetch(DATASETS[datasetKey]);
     data = await res.json();
     nextSentence();
-    updateUI();
   }
 
   function weightedRandom(items) {
@@ -168,10 +184,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const filtered = data.filter(d => d.CEFR === stats.level);
     current = weightedRandom(filtered.length ? filtered : data);
 
-    englishText.textContent = examMode
-      ? '🎧 Ouça e repita'
-      : current.ENG;
-
+    englishText.textContent = examMode ? '🎧 Ouça e repita' : current.ENG;
     translationText.textContent = current.PTBR;
     translationText.classList.add('hidden');
     feedback.textContent = '';
@@ -182,11 +195,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   ======================= */
 
   function normalize(text) {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z']/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    return text.toLowerCase().replace(/[^a-z']/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
   function similarity(a, b) {
@@ -203,22 +212,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     return t.map((w, i) => {
       const score = similarity(w, s[i] || '');
-
       if (score >= 0.85) return `<span>${w}</span>`;
 
-      const cls =
-        score >= 0.5
-          ? 'text-yellow-400 underline cursor-pointer'
-          : 'text-red-400 underline cursor-pointer';
+      const cls = score >= 0.5
+        ? 'text-yellow-400 underline cursor-pointer'
+        : 'text-red-400 underline cursor-pointer';
 
       return `<span class="${cls}" data-word="${w}">${w}</span>`;
     }).join(' ');
   }
 
   function attachWordListeners() {
-    document.querySelectorAll('[data-word]').forEach(el => {
-      el.addEventListener('click', () => speakWord(el.dataset.word));
-    });
+    document.querySelectorAll('[data-word]').forEach(el =>
+      el.addEventListener('click', () => speakWord(el.dataset.word))
+    );
+  }
+
+  function adjustLevelByScore(success) {
+    const lvl = current.CEFR;
+    const delta = success
+      ? SCORE_RULES.hits[lvl]
+      : SCORE_RULES.errors[lvl];
+
+    stats.score += delta;
+    stats.level = levelFromScore(stats.score);
+  }
+
+  function levelFromScore(score) {
+    if (score <= 30) return 'A1';
+    if (score <= 60) return 'A2';
+    if (score <= 70) return 'B1';
+    if (score <= 80) return 'B2';
+    if (score <= 90) return 'C1';
+    return 'C2';
   }
 
   function listen() {
@@ -230,9 +256,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const rec = new SR();
     rec.lang = 'en-US';
-    rec.continuous = false;
-    rec.interimResults = false;
-    rec.maxAlternatives = 1;
 
     rec.onstart = () => feedback.textContent = '🎙️ Ouvindo...';
 
@@ -247,37 +270,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (score >= 0.75) {
         feedback.textContent = '✅ Boa pronúncia';
         stats.hits++;
-        stats.weights[current.ENG] =
-          Math.max(1, (stats.weights[current.ENG] || 1) - 1);
-        adjustLevel(true);
+        stats.weights[current.ENG] = Math.max(1, (stats.weights[current.ENG] || 1) - 1);
+        adjustLevelByScore(true);
       } else {
         feedback.textContent = '❌ Atenção às palavras';
         stats.errors++;
-        stats.weights[current.ENG] =
-          (stats.weights[current.ENG] || 1) + 2;
-        adjustLevel(false);
+        stats.weights[current.ENG] = (stats.weights[current.ENG] || 1) + 2;
+        adjustLevelByScore(false);
       }
 
       saveAll();
       updateUI();
     };
 
-    rec.onerror = () => {
-      feedback.textContent = '⚠️ Erro no reconhecimento de voz';
-    };
-
+    rec.onerror = () => feedback.textContent = '⚠️ Erro no reconhecimento';
     rec.start();
-  }
-
-  /* =======================
-     PROGRESSÃO CEFR
-  ======================= */
-
-  function adjustLevel(success) {
-    let i = levels.indexOf(stats.level);
-    if (success && i < levels.length - 1) i++;
-    if (!success && i > 0) i--;
-    stats.level = levels[i];
   }
 
   /* =======================
@@ -304,30 +311,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   function resetProgress() {
     if (!confirm('Deseja apagar todo o progresso?')) return;
 
-    stats = { level: 'A1', hits: 0, errors: 0, weights: {} };
+    stats = { level: 'A1', score: 0, hits: 0, errors: 0, weights: {} };
     examMode = false;
     datasetKey = 'frases';
 
     saveAll();
     loadDataset();
+    updateUI();
   }
 
   function updateUI() {
     hitsEl.textContent = stats.hits;
     errorsEl.textContent = stats.errors;
-    levelText.textContent = `Nível atual: ${stats.level}`;
+    levelText.textContent = `Nível: ${stats.level} | Pontos: ${stats.score}`;
     examModeBtn.textContent = examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
     toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
   }
 
   function saveAll() {
     if (!firebaseReady || !userRef) return;
-
-    setDoc(userRef, {
-      stats,
-      datasetKey,
-      examMode
-    });
+    setDoc(userRef, { stats, datasetKey, examMode });
   }
 
 });
