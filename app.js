@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
 
   /* =======================
-     FIREBASE (DINÂMICO)
+     FIREBASE
   ======================= */
 
   const { onAuthStateChanged } =
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let firebaseReady = false;
 
   /* =======================
-     CONFIGURAÇÃO GERAL
+     CONFIG
   ======================= */
 
   const DATASETS = {
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let selectedVoice = null;
 
   /* =======================
-     ELEMENTOS DO DOM
+     DOM
   ======================= */
 
   const englishText = document.getElementById('englishText');
@@ -61,7 +61,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   const examModeBtn = document.getElementById('examModeBtn');
 
   /* =======================
-     AUTENTICAÇÃO + LOAD
+     UTIL
+  ======================= */
+
+  function clampScore(value) {
+    if (!Number.isFinite(value)) return SCORE_MIN;
+    return Math.min(SCORE_MAX, Math.max(SCORE_MIN, value));
+  }
+
+  function levelFromScore(score) {
+    if (score <= 30) return 'A1';
+    if (score <= 60) return 'A2';
+    if (score <= 70) return 'B1';
+    if (score <= 80) return 'B2';
+    if (score <= 90) return 'C1';
+    return 'C2'; // >= 91
+  }
+
+  /* =======================
+     AUTH + LOAD
   ======================= */
 
   onAuthStateChanged(auth, async user => {
@@ -79,11 +97,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       firebaseReady = true;
     } catch {
-      console.warn('⚠️ Firestore indisponível, usando memória local');
+      console.warn('⚠️ Firestore indisponível');
     }
 
-    // Compatibilidade retroativa + clamp defensivo
-    stats.score = Number.isFinite(stats.score) ? stats.score : 0;
+    // 🔒 NORMALIZAÇÃO ABSOLUTA DO ESTADO
     stats.score = clampScore(stats.score);
     stats.level = levelFromScore(stats.score);
 
@@ -112,62 +129,50 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     VOZ (TTS)
+     VOICE
   ======================= */
 
   function initVoices() {
-    const preferred = ['Samantha', 'Daniel', 'Aaron'];
-
-    function pickVoice() {
-      const voices = speechSynthesis.getVoices();
-      if (!voices.length) return;
-
+    const preferred = ['Samantha','Daniel','Aaron'];
+    const pick = () => {
+      const v = speechSynthesis.getVoices();
       selectedVoice =
-        voices.find(v => preferred.includes(v.name) && v.lang.startsWith('en')) ||
-        voices.find(v => v.lang === 'en-US') ||
-        voices[0];
-    }
-
-    pickVoice();
-    speechSynthesis.onvoiceschanged = pickVoice;
+        v.find(x => preferred.includes(x.name) && x.lang.startsWith('en')) ||
+        v.find(x => x.lang === 'en-US') || v[0];
+    };
+    pick();
+    speechSynthesis.onvoiceschanged = pick;
   }
 
-  function speakText(text) {
-    if (!text) return;
+  function speakText(t) {
+    if (!t) return;
     speechSynthesis.cancel();
-
-    const u = new SpeechSynthesisUtterance(text);
+    const u = new SpeechSynthesisUtterance(t);
     u.lang = 'en-US';
     if (selectedVoice) u.voice = selectedVoice;
     u.rate = 0.95;
-
     speechSynthesis.speak(u);
   }
 
-  function speakSentence() {
-    if (current) speakText(current.ENG);
-  }
-
-  function speakWord(word) {
-    speakText(word);
-  }
+  function speakSentence(){ if(current) speakText(current.ENG); }
+  function speakWord(w){ speakText(w); }
 
   /* =======================
      DATASET
   ======================= */
 
   async function loadDataset() {
-    const res = await fetch(DATASETS[datasetKey]);
-    data = await res.json();
+    const r = await fetch(DATASETS[datasetKey]);
+    data = await r.json();
     nextSentence();
     updateUI();
   }
 
   function weightedRandom(items) {
     const pool = [];
-    items.forEach(item => {
-      const w = stats.weights[item.ENG] || 1;
-      for (let i = 0; i < w; i++) pool.push(item);
+    items.forEach(i => {
+      const w = stats.weights[i.ENG] || 1;
+      for (let j = 0; j < w; j++) pool.push(i);
     });
     return pool[Math.floor(Math.random() * pool.length)];
   }
@@ -175,7 +180,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   function nextSentence() {
     const filtered = data.filter(d => d.CEFR === stats.level);
     current = weightedRandom(filtered.length ? filtered : data);
-
     englishText.textContent = examMode ? '🎧 Ouça e repita' : current.ENG;
     translationText.textContent = current.PTBR;
     translationText.classList.add('hidden');
@@ -183,43 +187,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     PRONÚNCIA (STT)
+     STT
   ======================= */
 
-  function normalize(text) {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z']/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+  function normalize(t) {
+    return t.toLowerCase().replace(/[^a-z']/g,' ').replace(/\s+/g,' ').trim();
   }
 
-  function similarity(a, b) {
-    let same = 0;
-    for (let i = 0; i < Math.min(a.length, b.length); i++) {
-      if (a[i] === b[i]) same++;
-    }
-    return same / Math.max(a.length, b.length);
-  }
-
-  function levelFromScore(score) {
-    if (score <= 30) return 'A1';
-    if (score >= 31 && score <= 60) return 'A2';
-    if (score >= 61 && score <= 70) return 'B1';
-    if (score >= 71 && score <= 80) return 'B2';
-    if (score >= 81 && score <= 90) return 'C1';
-    if (score >= 91) return 'C2';
-  }
-
-  function clampScore(score) {
-    return Math.min(SCORE_MAX, Math.max(SCORE_MIN, score));
+  function similarity(a,b) {
+    let s = 0;
+    for (let i = 0; i < Math.min(a.length,b.length); i++)
+      if (a[i] === b[i]) s++;
+    return s / Math.max(a.length,b.length);
   }
 
   function adjustLevelByScore(success) {
-    const qLevel = current.CEFR;
     const delta = success
-      ? SCORE_RULES.hits[qLevel]
-      : SCORE_RULES.errors[qLevel];
+      ? SCORE_RULES.hits[current.CEFR]
+      : SCORE_RULES.errors[current.CEFR];
 
     stats.score = clampScore(stats.score + delta);
     stats.level = levelFromScore(stats.score);
@@ -232,17 +217,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    const rec = new SR();
-    rec.lang = 'en-US';
+    const r = new SR();
+    r.lang = 'en-US';
 
-    rec.onstart = () => feedback.textContent = '🎙️ Ouvindo...';
+    r.onstart = () => feedback.textContent = '🎙️ Ouvindo...';
 
-    rec.onresult = e => {
+    r.onresult = e => {
       const spoken = normalize(e.results[0][0].transcript);
       const target = normalize(current.ENG);
-      const score = similarity(spoken, target);
+      const sc = similarity(spoken, target);
 
-      if (score >= 0.75) {
+      if (sc >= 0.75) {
         feedback.textContent = '✅ Boa pronúncia';
         stats.hits++;
         adjustLevelByScore(true);
@@ -256,12 +241,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateUI();
     };
 
-    rec.onerror = () => feedback.textContent = '⚠️ Erro no reconhecimento';
-    rec.start();
+    r.start();
   }
 
   /* =======================
-     UI / ESTADO
+     UI
   ======================= */
 
   function toggleTranslation() {
