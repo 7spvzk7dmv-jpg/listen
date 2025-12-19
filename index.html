@@ -5,22 +5,31 @@
   <title>English Pronunciation Trainer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Tailwind CSS -->
+  <!-- CSP EXPLÍCITO (NECESSÁRIO PARA SAFARI + TAILWIND CDN) -->
+  <meta http-equiv="Content-Security-Policy"
+        content="
+          default-src 'self' https: data:;
+          script-src 'self' https://cdn.tailwindcss.com https://www.gstatic.com 'unsafe-inline' 'unsafe-eval';
+          style-src 'self' https://cdn.tailwindcss.com 'unsafe-inline';
+          connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com;
+          img-src 'self' data:;
+          font-src 'self' data:;
+        ">
+
+  <!-- TAILWIND CDN (AGORA FUNCIONA NO SAFARI) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- CSS complementar obrigatório -->
+  <!-- CSS complementar -->
   <style>
     .wrong {
-      color: #f87171; /* red-400 */
+      color: #f87171;
       cursor: pointer;
       font-weight: 600;
       text-decoration: underline;
     }
-
     .wrong:hover {
-      color: #fca5a5; /* red-300 */
+      color: #fca5a5;
     }
-
     .hidden {
       display: none;
     }
@@ -53,17 +62,15 @@
       </div>
     </header>
 
-    <!-- TEXTO PRINCIPAL -->
+    <!-- TEXTO -->
     <div class="text-center space-y-3">
       <p id="englishText"
-         class="text-2xl font-medium leading-relaxed select-text">
-      </p>
+         class="text-2xl font-medium leading-relaxed select-text"></p>
 
       <p id="translationText" class="text-zinc-400 hidden"></p>
 
-      <!-- MOSTRADOR DE NÍVEL E PONTUAÇÃO -->
       <p id="levelText" class="text-sm text-zinc-400 font-mono">
-        Nível: A1 | Pontos: 0
+        Nível: A1 | Pontos: 0 | Streak: 0
       </p>
     </div>
 
@@ -109,10 +116,10 @@
 
   </div>
 
-  <!-- Firebase base -->
+  <!-- Firebase -->
   <script type="module" src="firebase.js"></script>
 
-  <!-- Auth guard -->
+  <!-- Auth -->
   <script type="module">
     import { onAuthStateChanged, signOut }
       from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
@@ -124,13 +131,13 @@
       if (!user) location.href = 'login.html';
     });
 
-    logoutBtn.addEventListener('click', async () => {
+    logoutBtn.onclick = async () => {
       await signOut(auth);
       location.href = 'login.html';
-    });
+    };
   </script>
 
-  <!-- App principal -->
+  <!-- App -->
   <script src="app.js"></script>
 
 </body>
