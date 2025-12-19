@@ -4,6 +4,18 @@
   <meta charset="UTF-8" />
   <title>English Pronunciation Trainer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- CSS mínimo que NÃO depende do Tailwind -->
+  <style>
+    .hidden { display: none; }
+    .wrong {
+      color: #f87171;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+    .wrong:hover { color: #fca5a5; }
+  </style>
 </head>
 
 <body class="bg-zinc-900 text-zinc-100 min-h-screen flex items-center justify-center px-4">
@@ -32,10 +44,11 @@
       </div>
     </header>
 
-    <!-- TEXTO -->
+    <!-- TEXTO PRINCIPAL -->
     <div class="text-center space-y-3">
-      <p id="englishText" class="text-2xl font-medium leading-relaxed"></p>
+      <p id="englishText" class="text-2xl font-medium leading-relaxed select-text"></p>
       <p id="translationText" class="text-zinc-400 hidden"></p>
+
       <p id="levelText" class="text-sm text-zinc-400 font-mono">
         Nível: A1 | Pontos: 0 | Streak: 0
       </p>
@@ -43,32 +56,53 @@
 
     <!-- CONTROLES -->
     <div class="flex justify-center gap-3 flex-wrap">
-      <button id="playBtn" class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">🔊 Ouvir</button>
-      <button id="micBtn" class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">🎤 Falar</button>
-      <button id="translateBtn" class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">🇧🇷 Tradução</button>
-      <button id="nextBtn" class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">➡️ Próxima</button>
+      <button id="playBtn"
+        class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
+        🔊 Ouvir
+      </button>
+
+      <button id="micBtn"
+        class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
+        🎤 Falar
+      </button>
+
+      <button id="translateBtn"
+        class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
+        🇧🇷 Tradução
+      </button>
+
+      <button id="nextBtn"
+        class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
+        ➡️ Próxima
+      </button>
     </div>
 
     <!-- FEEDBACK -->
     <div class="text-center text-sm space-y-1">
       <p id="feedback"></p>
-      <p>✅ <span id="hits">0</span> | ❌ <span id="errors">0</span></p>
+      <p>
+        ✅ <span id="hits">0</span>
+        &nbsp;|&nbsp;
+        ❌ <span id="errors">0</span>
+      </p>
     </div>
 
     <!-- RESET -->
     <div class="text-center">
-      <button id="resetBtn" class="text-red-400 hover:underline">Resetar progresso</button>
+      <button id="resetBtn" class="text-red-400 hover:underline">
+        Resetar progresso
+      </button>
     </div>
 
   </div>
 
-  <!-- 🔥 TAILWIND CDN AQUI (CRÍTICO PARA SAFARI) -->
+  <!-- 🔥 TAILWIND CDN (CRÍTICO PARA SAFARI) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Firebase -->
+  <!-- Firebase base -->
   <script type="module" src="firebase.js"></script>
 
-  <!-- Auth -->
+  <!-- Auth guard -->
   <script type="module">
     import { onAuthStateChanged, signOut }
       from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
@@ -86,8 +120,8 @@
     };
   </script>
 
-  <!-- App -->
- <!--  <script src="app.js"></script> -->
+  <!-- App principal -->
+  <script src="app.js"></script>
 
 </body>
 </html>
