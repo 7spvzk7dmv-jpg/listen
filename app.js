@@ -91,13 +91,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     return Math.min(SCORE_MAX, Math.max(SCORE_MIN, v));
   }
 
-  function levelFromScore(s) {
-    if (s <= 30) return 'A1';
-    if (s <= 60) return 'A2';
-    if (s <= 70) return 'B1';
-    if (s <= 80) return 'B2';
-    if (s <= 90) return 'C1';
-    return 'C2';
+  function levelFromScore(score) {
+    if (score <= 20) return 'A1';
+    if (score >= 21 && score <= 50) return 'A2';
+    if (score >= 51 && score <= 70) return 'B1';
+    if (score >= 71 && score <= 80) return 'B2';
+    if (score >= 81 && score <= 90) return 'C1';
+    if (score >= 91) return 'C2';
   }
 
   function normalize(t) {
