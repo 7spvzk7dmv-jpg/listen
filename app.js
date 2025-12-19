@@ -85,50 +85,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* =======================
      NORMALIZAÇÃO / FONÉTICA REAL
   ======================= */
-
   function normalizeText(t) {
-    return t.toLowerCase()
-      .replace(/[^a-z]/g, '')
-      .trim();
+    return t.toLowerCase().replace(/[^a-z]/g,'').trim();
   }
 
   function phoneticShape(word) {
     let w = normalizeText(word);
 
-    // ditongos e vogais longas
     w = w
-      .replace(/igh|eye|aye/g, 'ai')
-      .replace(/ai|ay|ei|ey|igh/g, 'ai')
-      .replace(/ow|ou|au|aw/g, 'au')
-      .replace(/oo|ou|u/g, 'u')
-      .replace(/ee|ea|ie|ei|i|y/g, 'i')
-      .replace(/oa|o|a/g, 'a');
+      .replace(/ai|ay|ei|ey|igh/g,'ai')
+      .replace(/ow|ou|au|aw/g,'au')
+      .replace(/ee|ea|ie|ei|i|y/g,'i')
+      .replace(/oo|ou|u/g,'u')
+      .replace(/oa|o|a/g,'a');
 
-    // consoantes próximas
     w = w
-      .replace(/ph/g, 'f')
-      .replace(/ck|c|q/g, 'k')
-      .replace(/v/g, 'f')
-      .replace(/z/g, 's')
-      .replace(/d/g, 't')
-      .replace(/b/g, 'p')
-      .replace(/x/g, 'ks');
+      .replace(/ph/g,'f')
+      .replace(/ck|c|q/g,'k')
+      .replace(/v/g,'f')
+      .replace(/z/g,'s')
+      .replace(/d/g,'t')
+      .replace(/b/g,'p');
 
-    // remove letras mudas comuns
-    w = w
-      .replace(/^kn/, 'n')
-      .replace(/^wr/, 'r')
-      .replace(/gh$/, '')
-      .replace(/e$/, '');
-
-    // colapsa repetições
-    w = w.replace(/(.)\1+/g, '$1');
-
+    w = w.replace(/(.)\1+/g,'$1');
     return w;
   }
 
   function isPhoneticallySame(a, b) {
-    if (!a || !b) return false;
     return phoneticShape(a) === phoneticShape(b);
   }
 
@@ -170,30 +153,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     TTS
-  ======================= */
-  let selectedVoice = null;
-
-  function pickEnglishVoice() {
-    const voices = speechSynthesis.getVoices();
-    selectedVoice = voices.find(v => v.lang === 'en-US') || null;
-  }
-
-  speechSynthesis.onvoiceschanged = pickEnglishVoice;
-  pickEnglishVoice();
-
-  function speakText(text) {
-    if (!selectedVoice) return;
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.voice = selectedVoice;
-    u.lang = 'en-US';
-    speechSynthesis.speak(u);
-  }
-
-  window.speakWord = speakText;
-
-  /* =======================
      DATASET
   ======================= */
   async function loadDataset() {
@@ -223,7 +182,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     return t.map(word => {
       let ok = false;
-
       for (let j = si; j <= si + 1 && j < s.length; j++) {
         if (isPhoneticallySame(s[j], word)) {
           ok = true;
@@ -231,7 +189,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           break;
         }
       }
-
       return { word, ok };
     });
   }
@@ -265,7 +222,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateRecent(isHit);
       applyStreak(isHit);
 
-      let delta = isHit
+      const delta = isHit
         ? SCORE_RULES.hits[stats.level]
         : SCORE_RULES.errors[stats.level];
 
@@ -296,6 +253,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     errorsEl.textContent = stats.errors;
     levelText.textContent =
       `Nível: ${stats.level} | Pontos: ${stats.score} | Streak: ${stats.streak}`;
+
+    toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
+    examModeBtn.textContent = examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
   }
 
   function resetProgress() {
@@ -315,12 +275,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   toggleDatasetBtn.onclick = () => {
     datasetKey = datasetKey === 'frases' ? 'palavras' : 'frases';
     loadDataset();
+    updateUI();
   };
 
   examModeBtn.onclick = () => {
     examMode = !examMode;
     nextSentence();
+    updateUI();
   };
+
+  /* =======================
+     TTS
+  ======================= */
+  let selectedVoice = null;
+
+  function pickEnglishVoice() {
+    const voices = speechSynthesis.getVoices();
+    selectedVoice = voices.find(v => v.lang === 'en-US') || null;
+  }
+
+  speechSynthesis.onvoiceschanged = pickEnglishVoice;
+  pickEnglishVoice();
+
+  function speakText(text) {
+    if (!selectedVoice) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.voice = selectedVoice;
+    u.lang = 'en-US';
+    speechSynthesis.speak(u);
+  }
+
+  window.speakWord = speakText;
 
   /* =======================
      FIREBASE
