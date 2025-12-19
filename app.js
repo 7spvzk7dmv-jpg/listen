@@ -67,15 +67,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   /* =======================
-     LEVELS (EXATOS)
+     LEVELS (EXATAMENTE COMO DEFINIDOS)
   ======================= */
   function levelFromScore(score) {
     if (score <= 10) return 'A1';
-    if (score <= 20) return 'A2';
-    if (score <= 40) return 'B1';
-    if (score <= 70) return 'B2';
-    if (score <= 90) return 'C1';
-    return 'C2';
+    if (score >= 11 && score <= 20) return 'A2';
+    if (score >= 21 && score <= 40) return 'B1';
+    if (score >= 41 && score <= 70) return 'B2';
+    if (score >= 71 && score <= 90) return 'C1';
+    if (score >= 91) return 'C2';
   }
 
   function clampScore(v) {
@@ -83,21 +83,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     FONÉTICA REAL (ROBUSTA)
+     FONÉTICA ROBUSTA (HUMANA)
   ======================= */
   function normalizeWord(w) {
-    return (w || '')
-      .toLowerCase()
-      .replace(/[^a-z]/g, '');
+    return (w || '').toLowerCase().replace(/[^a-z]/g,'');
   }
 
   function phoneticShape(w) {
     w = normalizeWord(w);
 
-    // remove duplicações silábicas (delayded, eded, ded)
-    w = w.replace(/(ed)+$/, 'ed');
+    // colapsa repetições silábicas comuns (delayded, eded)
+    w = w.replace(/(ed)+$/,'ed');
 
-    // vogais / ditongos
+    // ditongos e vogais
     w = w
       .replace(/ai|ay|ei|ey|igh/g,'ai')
       .replace(/oi|oy/g,'oi')
@@ -115,7 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/d/g,'t')
       .replace(/b/g,'p');
 
-    // colapsa repetições
+    // colapsa letras repetidas
     w = w.replace(/(.)\1+/g,'$1');
 
     return w;
@@ -124,7 +122,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   function phoneticDistance(a, b) {
     a = phoneticShape(a);
     b = phoneticShape(b);
-    if (a === b) return 0;
     let diff = Math.abs(a.length - b.length);
     for (let i = 0; i < Math.min(a.length, b.length); i++) {
       if (a[i] !== b[i]) diff++;
@@ -137,10 +134,48 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function isPhoneticallySame(spoken, target) {
-    if (isShortWord(target)) return true;
+    // REGRA CRÍTICA: palavras curtas (TEA, TO, MY, KEY)
+    if (isShortWord(target)) {
+      const s = normalizeWord(spoken);
+      return s.length > 0 && s.length <= 4; // aceita “ti / tee / ki”
+    }
+    return phoneticDistance(spoken, target) <= 1;
+  }
 
-    const d = phoneticDistance(spoken, target);
-    return d <= 1; // tolerância segura
+  /* =======================
+     STREAK / CONSISTÊNCIA
+  ======================= */
+  function updateRecent(isHit) {
+    stats.recent.push(isHit);
+    if (stats.recent.length > WINDOW_SIZE) stats.recent.shift();
+  }
+
+  function recentAccuracy() {
+    if (!stats.recent.length) return 1;
+    return stats.recent.filter(Boolean).length / stats.recent.length;
+  }
+
+  function applyStreak(isHit) {
+    if (isHit) {
+      stats.streak++;
+      if (stats.streak === 3) stats.score += 1;
+      if (stats.streak === 5) stats.score += 2;
+      if (stats.streak >= 8) stats.score += 1;
+    } else {
+      stats.streak = 0;
+    }
+  }
+
+  function evaluateLevel() {
+    const acc = recentAccuracy();
+    const upper = { A1:10, A2:20, B1:40, B2:70, C1:90, C2:100 }[stats.level];
+
+    if (stats.score >= upper && acc >= 0.75 && stats.streak >= 3) {
+      stats.level = levelFromScore(stats.score);
+    }
+    if (stats.score < upper - 10 && acc < 0.55) {
+      stats.level = levelFromScore(stats.score);
+    }
   }
 
   /* =======================
@@ -164,7 +199,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     DIFF
+     DIFF + HIGHLIGHT
   ======================= */
   function diffWords(spoken, target) {
     const s = spoken.split(' ');
@@ -208,6 +243,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       const accuracy = diff.filter(w => w.ok).length / diff.length;
       const isHit = accuracy >= 0.6;
 
+      updateRecent(isHit);
+      applyStreak(isHit);
+
+      const delta = isHit
+        ? SCORE_RULES.hits[stats.level]
+        : SCORE_RULES.errors[stats.level];
+
+      stats.score = clampScore(stats.score + delta);
+      evaluateLevel();
+
       if (isHit) {
         stats.hits++;
         feedback.textContent = '✅ Boa pronúncia';
@@ -234,8 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       `Nível: ${stats.level} | Pontos: ${stats.score} | Streak: ${stats.streak}`;
 
     toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
-    examModeBtn.textContent =
-      examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
+    examModeBtn.textContent = examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
   }
 
   /* =======================
@@ -315,6 +359,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     setDoc(userRef, { stats, datasetKey, examMode });
   }
 
+  /* =======================
+     START
+  ======================= */
   loadDataset();
   updateUI();
 
