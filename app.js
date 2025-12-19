@@ -17,8 +17,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   const SCORE_RULES = {
-    hits:   { A1:1, A2:3, B1:5, B2:7, C1:9, C2:10 },
-    errors: { A1:-10, A2:-8, B1:-6, B2:-4, C1:-2, C2:-1 }
+    hits:   { A1:1, A2:2, B1:2, B2:5, C1:5, C2:5 },
+    errors: { A1:-5, A2:-5, B1:-5, B2:-3, C1:-3, C2:-1 }
   };
 
   const SCORE_MIN = 0;
@@ -93,10 +93,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function levelFromScore(score) {
     if (score <= 20) return 'A1';
-    if (score >= 21 && score <= 40) return 'A2';
-    if (score >= 41 && score <= 60) return 'B1';
-    if (score >= 61 && score <= 80) return 'B2';
-    if (score >= 81 && score <= 90) return 'C1';
+    if (score >= 11 && score <= 20) return 'A2';
+    if (score >= 21 && score <= 40) return 'B1';
+    if (score >= 41 && score <= 70) return 'B2';
+    if (score >= 71 && score <= 90) return 'C1';
     if (score >= 91) return 'C2';
   }
 
