@@ -71,11 +71,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   ======================= */
   function levelFromScore(score) {
     if (score <= 10) return 'A1';
-    if (score >= 11 && score <= 20) return 'A2';
-    if (score >= 21 && score <= 40) return 'B1';
-    if (score >= 41 && score <= 70) return 'B2';
-    if (score >= 71 && score <= 90) return 'C1';
-    if (score >= 91) return 'C2';
+    if (score <= 20) return 'A2';
+    if (score <= 40) return 'B1';
+    if (score <= 70) return 'B2';
+    if (score <= 90) return 'C1';
+    return 'C2';
   }
 
   function clampScore(v) {
@@ -83,20 +83,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     FONÉTICA (ROBUSTA)
+     FONÉTICA REAL (ROBUSTA)
   ======================= */
   function normalizeWord(w) {
     return (w || '')
       .toLowerCase()
-      .replace(/[^a-z]/g,'');
+      .replace(/[^a-z]/g, '');
   }
 
   function phoneticShape(w) {
     w = normalizeWord(w);
 
+    // remove duplicações silábicas (delayded, eded, ded)
+    w = w.replace(/(ed)+$/, 'ed');
+
     // vogais / ditongos
     w = w
       .replace(/ai|ay|ei|ey|igh/g,'ai')
+      .replace(/oi|oy/g,'oi')
       .replace(/ow|ou|au|aw/g,'au')
       .replace(/ee|ea|ie|ei|i|y/g,'i')
       .replace(/oo|ou|u/g,'u')
@@ -111,78 +115,32 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/d/g,'t')
       .replace(/b/g,'p');
 
-    // remove repetições
+    // colapsa repetições
     w = w.replace(/(.)\1+/g,'$1');
 
     return w;
   }
 
-  /* =======================
-     REGRA CRÍTICA – PALAVRAS CURTAS
-     (RESOLVE "TEA", "KEY", "TO", "MY")
-  ======================= */
+  function phoneticDistance(a, b) {
+    a = phoneticShape(a);
+    b = phoneticShape(b);
+    if (a === b) return 0;
+    let diff = Math.abs(a.length - b.length);
+    for (let i = 0; i < Math.min(a.length, b.length); i++) {
+      if (a[i] !== b[i]) diff++;
+    }
+    return diff;
+  }
+
   function isShortWord(target) {
     return normalizeWord(target).length <= 3;
   }
 
-  function acceptShortWord(spoken, target) {
-    const s = normalizeWord(spoken);
-    const t = normalizeWord(target);
-
-    // se o usuário falou algo curto (1–4 letras)
-    if (s.length >= 1 && s.length <= 4) {
-      return true; // ACEITA AUTOMATICAMENTE
-    }
-
-    // se falou algo longo tipo "teia", rejeita
-    return false;
-  }
-
   function isPhoneticallySame(spoken, target) {
-    // REGRA ESPECIAL PRIMEIRO
-    if (isShortWord(target)) {
-      return acceptShortWord(spoken, target);
-    }
+    if (isShortWord(target)) return true;
 
-    // REGRA NORMAL
-    return phoneticShape(spoken) === phoneticShape(target);
-  }
-
-  /* =======================
-     STREAK / CONSISTÊNCIA
-  ======================= */
-  function updateRecent(isHit) {
-    stats.recent.push(isHit);
-    if (stats.recent.length > WINDOW_SIZE) stats.recent.shift();
-  }
-
-  function recentAccuracy() {
-    if (!stats.recent.length) return 1;
-    return stats.recent.filter(Boolean).length / stats.recent.length;
-  }
-
-  function applyStreak(isHit) {
-    if (isHit) {
-      stats.streak++;
-      if (stats.streak === 3) stats.score += 1;
-      if (stats.streak === 5) stats.score += 2;
-      if (stats.streak >= 8) stats.score += 1;
-    } else {
-      stats.streak = 0;
-    }
-  }
-
-  function evaluateLevel() {
-    const acc = recentAccuracy();
-    const upper = { A1:10, A2:20, B1:40, B2:70, C1:90, C2:100 }[stats.level];
-
-    if (stats.score >= upper && acc >= 0.75 && stats.streak >= 3) {
-      stats.level = levelFromScore(stats.score);
-    }
-
-    if (stats.score < upper - 10 && acc < 0.55) {
-      stats.level = levelFromScore(stats.score);
-    }
+    const d = phoneticDistance(spoken, target);
+    return d <= 1; // tolerância segura
   }
 
   /* =======================
@@ -206,7 +164,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     DIFF + HIGHLIGHT
+     DIFF
   ======================= */
   function diffWords(spoken, target) {
     const s = spoken.split(' ');
@@ -246,21 +204,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     r.onresult = e => {
       const spoken = e.results[0][0].transcript.toLowerCase();
-      const target = current.ENG.toLowerCase();
-
-      const diff = diffWords(spoken, target);
+      const diff = diffWords(spoken, current.ENG.toLowerCase());
       const accuracy = diff.filter(w => w.ok).length / diff.length;
       const isHit = accuracy >= 0.6;
-
-      updateRecent(isHit);
-      applyStreak(isHit);
-
-      const delta = isHit
-        ? SCORE_RULES.hits[stats.level]
-        : SCORE_RULES.errors[stats.level];
-
-      stats.score = clampScore(stats.score + delta);
-      evaluateLevel();
 
       if (isHit) {
         stats.hits++;
@@ -288,7 +234,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       `Nível: ${stats.level} | Pontos: ${stats.score} | Streak: ${stats.streak}`;
 
     toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
-    examModeBtn.textContent = examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
+    examModeBtn.textContent =
+      examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
   }
 
   /* =======================
@@ -368,9 +315,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     setDoc(userRef, { stats, datasetKey, examMode });
   }
 
-  /* =======================
-     START
-  ======================= */
   loadDataset();
   updateUI();
 
