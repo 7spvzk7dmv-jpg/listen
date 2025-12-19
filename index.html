@@ -5,7 +5,7 @@
   <title>English Pronunciation Trainer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Tailwind -->
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -14,7 +14,7 @@
   <div class="w-full max-w-xl bg-zinc-800 rounded-2xl shadow-lg p-6 space-y-6">
 
     <!-- HEADER -->
-    <header class="flex justify-between items-center">
+    <header class="flex justify-between items-center flex-wrap gap-3">
       <h1 class="text-xl font-semibold">English Trainer</h1>
 
       <div class="flex gap-2 flex-wrap justify-end">
@@ -40,25 +40,31 @@
       <p id="englishText" class="text-2xl font-medium leading-relaxed"></p>
       <p id="translationText" class="text-zinc-400 hidden"></p>
 
-      <!-- NÍVEL + PONTUAÇÃO -->
-      <p id="levelText" class="text-sm text-zinc-500"></p>
+      <!-- MOSTRADOR DE NÍVEL E PONTUAÇÃO -->
+      <p id="levelText" class="text-sm text-zinc-400 font-mono">
+        Nível: A1 | Pontos: 0
+      </p>
     </div>
 
     <!-- CONTROLES -->
     <div class="flex justify-center gap-3 flex-wrap">
-      <button id="playBtn" class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
+      <button id="playBtn"
+        class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
         🔊 Ouvir
       </button>
 
-      <button id="micBtn" class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
+      <button id="micBtn"
+        class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
         🎤 Falar
       </button>
 
-      <button id="translateBtn" class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
+      <button id="translateBtn"
+        class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
         🇧🇷 Tradução
       </button>
 
-      <button id="nextBtn" class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
+      <button id="nextBtn"
+        class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
         ➡️ Próxima
       </button>
     </div>
@@ -66,7 +72,11 @@
     <!-- FEEDBACK -->
     <div class="text-center text-sm space-y-1">
       <p id="feedback"></p>
-      <p>✅ <span id="hits">0</span> | ❌ <span id="errors">0</span></p>
+      <p>
+        ✅ <span id="hits">0</span>
+        &nbsp;|&nbsp;
+        ❌ <span id="errors">0</span>
+      </p>
     </div>
 
     <!-- RESET -->
