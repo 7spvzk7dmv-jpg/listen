@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const WINDOW_SIZE = 10;
 
   /* =======================
-     ESTADO
+     STATE
   ======================= */
   let datasetKey = 'frases';
   let data = [];
@@ -67,15 +67,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   /* =======================
-     LEVELS (EXATAMENTE COMO DEFINIDOS)
+     LEVELS (EXATOS)
   ======================= */
   function levelFromScore(score) {
     if (score <= 10) return 'A1';
-    if (score >= 11 && score <= 20) return 'A2';
-    if (score >= 21 && score <= 40) return 'B1';
-    if (score >= 41 && score <= 70) return 'B2';
-    if (score >= 71 && score <= 90) return 'C1';
-    if (score >= 91) return 'C2';
+    if (score <= 20) return 'A2';
+    if (score <= 40) return 'B1';
+    if (score <= 70) return 'B2';
+    if (score <= 90) return 'C1';
+    return 'C2';
   }
 
   function clampScore(v) {
@@ -83,70 +83,48 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     FONÉTICA ROBUSTA (HUMANA)
+     NORMALIZAÇÃO
   ======================= */
-  function normalizeWord(w) {
-    return (w || '').toLowerCase().replace(/[^a-z]/g,'');
+  function normalizeText(t) {
+    return t.toLowerCase()
+      .replace(/[^a-z']/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
-  function phoneticShape(w) {
-    w = normalizeWord(w);
-
-    // colapsa repetições silábicas comuns (delayded, eded)
-    w = w.replace(/(ed)+$/,'ed');
-
-    // ditongos e vogais
-    w = w
-      .replace(/ai|ay|ei|ey|igh/g,'ai')
-      .replace(/oi|oy/g,'oi')
-      .replace(/ow|ou|au|aw/g,'au')
-      .replace(/ee|ea|ie|ei|i|y/g,'i')
-      .replace(/oo|ou|u/g,'u')
-      .replace(/oa|o|a/g,'a');
-
-    // consoantes próximas
-    w = w
+  function phoneticCore(word) {
+    return word
       .replace(/ph/g,'f')
-      .replace(/ck|c|q/g,'k')
-      .replace(/v/g,'f')
-      .replace(/z/g,'s')
-      .replace(/d/g,'t')
-      .replace(/b/g,'p');
-
-    // colapsa letras repetidas
-    w = w.replace(/(.)\1+/g,'$1');
-
-    return w;
+      .replace(/ck|c/g,'k')
+      .replace(/qu/g,'k')
+      .replace(/th/g,'t')
+      .replace(/ee|ea|ie|ei|i|y/g,'i')
+      .replace(/oo|ou|u/g,'o')
+      .replace(/a|e/g,'a')
+      .replace(/(.)\1+/g,'$1')
+      .replace(/h/g,'')
+      .replace(/[^a-z]/g,'');
   }
 
-  function phoneticDistance(a, b) {
-    a = phoneticShape(a);
-    b = phoneticShape(b);
+  function coreMatch(a, b) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    if (a.length <= 2 || b.length <= 2) {
+      return a[0] === b[0];
+    }
     let diff = Math.abs(a.length - b.length);
+    let same = 0;
     for (let i = 0; i < Math.min(a.length, b.length); i++) {
-      if (a[i] !== b[i]) diff++;
+      if (a[i] === b[i]) same++;
     }
-    return diff;
-  }
-
-  function isShortWord(target) {
-    return normalizeWord(target).length <= 3;
-  }
-
-  function isPhoneticallySame(spoken, target) {
-    // REGRA CRÍTICA: palavras curtas (TEA, TO, MY, KEY)
-    if (isShortWord(target)) {
-      const s = normalizeWord(spoken);
-      return s.length > 0 && s.length <= 4; // aceita “ti / tee / ki”
-    }
-    return phoneticDistance(spoken, target) <= 1;
+    return same >= Math.min(a.length, b.length) - 1 && diff <= 1;
   }
 
   /* =======================
      STREAK / CONSISTÊNCIA
   ======================= */
-  function updateRecent(isHit) {
-    stats.recent.push(isHit);
+  function updateRecent(hit) {
+    stats.recent.push(hit);
     if (stats.recent.length > WINDOW_SIZE) stats.recent.shift();
   }
 
@@ -155,8 +133,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     return stats.recent.filter(Boolean).length / stats.recent.length;
   }
 
-  function applyStreak(isHit) {
-    if (isHit) {
+  function applyStreak(hit) {
+    if (hit) {
       stats.streak++;
       if (stats.streak === 3) stats.score += 1;
       if (stats.streak === 5) stats.score += 2;
@@ -170,13 +148,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     const acc = recentAccuracy();
     const upper = { A1:10, A2:20, B1:40, B2:70, C1:90, C2:100 }[stats.level];
 
-    if (stats.score >= upper && acc >= 0.75 && stats.streak >= 3) {
+    if (stats.score >= upper && acc >= 0.8 && stats.streak >= 3) {
       stats.level = levelFromScore(stats.score);
     }
+
     if (stats.score < upper - 10 && acc < 0.55) {
       stats.level = levelFromScore(stats.score);
     }
   }
+
+  /* =======================
+     TTS
+  ======================= */
+  let selectedVoice = null;
+
+  function pickVoice() {
+    const voices = speechSynthesis.getVoices();
+    selectedVoice = voices.find(v => v.lang === 'en-US') || null;
+  }
+
+  speechSynthesis.onvoiceschanged = pickVoice;
+  pickVoice();
+
+  function speakText(text) {
+    if (!selectedVoice) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.voice = selectedVoice;
+    u.lang = 'en-US';
+    speechSynthesis.speak(u);
+  }
+
+  window.speakWord = speakText;
 
   /* =======================
      DATASET
@@ -185,12 +188,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const r = await fetch(DATASETS[datasetKey]);
     data = await r.json();
     nextSentence();
+    updateButtons();
   }
 
   function nextSentence() {
     const filtered = data.filter(d => d.CEFR === stats.level);
     if (!filtered.length) return;
-
     current = filtered[Math.floor(Math.random() * filtered.length)];
     englishText.textContent = examMode ? '🎧 Ouça e repita' : current.ENG;
     translationText.textContent = current.PTBR;
@@ -208,8 +211,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     return t.map(word => {
       let ok = false;
+      const targetCore = phoneticCore(word);
+
       for (let j = si; j <= si + 1 && j < s.length; j++) {
-        if (isPhoneticallySame(s[j], word)) {
+        const spokenCore = phoneticCore(s[j]);
+        if (coreMatch(spokenCore, targetCore)) {
           ok = true;
           si = j + 1;
           break;
@@ -222,7 +228,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderDiff(diff) {
     englishText.innerHTML = diff.map(w =>
       w.ok
-        ? `<span>${w.word}</span>`
+        ? w.word
         : `<span class="wrong" onclick="speakWord('${w.word}')">${w.word}</span>`
     ).join(' ');
   }
@@ -238,22 +244,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     r.lang = 'en-US';
 
     r.onresult = e => {
-      const spoken = e.results[0][0].transcript.toLowerCase();
-      const diff = diffWords(spoken, current.ENG.toLowerCase());
+      const spoken = normalizeText(e.results[0][0].transcript);
+      const target = normalizeText(current.ENG);
+
+      const diff = diffWords(spoken, target);
       const accuracy = diff.filter(w => w.ok).length / diff.length;
-      const isHit = accuracy >= 0.6;
+      const hit = accuracy >= 0.8;
 
-      updateRecent(isHit);
-      applyStreak(isHit);
+      updateRecent(hit);
+      applyStreak(hit);
 
-      const delta = isHit
+      const delta = hit
         ? SCORE_RULES.hits[stats.level]
         : SCORE_RULES.errors[stats.level];
 
       stats.score = clampScore(stats.score + delta);
       evaluateLevel();
 
-      if (isHit) {
+      if (hit) {
         stats.hits++;
         feedback.textContent = '✅ Boa pronúncia';
       } else {
@@ -272,14 +280,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* =======================
      UI
   ======================= */
+  function updateButtons() {
+    toggleDatasetBtn.textContent =
+      datasetKey === 'frases' ? '📚 Frases' : '📖 Palavras';
+    examModeBtn.textContent =
+      examMode ? '📝 Exame: ON' : '📝 Exame: OFF';
+  }
+
   function updateUI() {
     hitsEl.textContent = stats.hits;
     errorsEl.textContent = stats.errors;
     levelText.textContent =
       `Nível: ${stats.level} | Pontos: ${stats.score} | Streak: ${stats.streak}`;
+    updateButtons();
+  }
 
-    toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
-    examModeBtn.textContent = examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
+  function resetProgress() {
+    if (!confirm('Deseja apagar todo o progresso?')) return;
+    stats = { level:'A1', score:0, hits:0, errors:0, streak:0, recent:[] };
+    saveAll();
+    loadDataset();
+    updateUI();
   }
 
   /* =======================
@@ -289,53 +310,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   micBtn.onclick = listen;
   translateBtn.onclick = () => translationText.classList.toggle('hidden');
   nextBtn.onclick = nextSentence;
+  resetBtn.onclick = resetProgress;
 
   toggleDatasetBtn.onclick = () => {
     datasetKey = datasetKey === 'frases' ? 'palavras' : 'frases';
     loadDataset();
-    updateUI();
   };
 
   examModeBtn.onclick = () => {
     examMode = !examMode;
     nextSentence();
-    updateUI();
-  };
-
-  resetBtn.onclick = () => {
-    if (!confirm('Deseja apagar todo o progresso?')) return;
-    stats = { level:'A1', score:0, hits:0, errors:0, streak:0, recent:[] };
+    updateButtons();
     saveAll();
-    loadDataset();
-    updateUI();
   };
 
   /* =======================
-     TTS
-  ======================= */
-  let selectedVoice = null;
-
-  function pickEnglishVoice() {
-    const voices = speechSynthesis.getVoices();
-    selectedVoice = voices.find(v => v.lang === 'en-US') || null;
-  }
-
-  speechSynthesis.onvoiceschanged = pickEnglishVoice;
-  pickEnglishVoice();
-
-  function speakText(text) {
-    if (!selectedVoice) return;
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.voice = selectedVoice;
-    u.lang = 'en-US';
-    speechSynthesis.speak(u);
-  }
-
-  window.speakWord = speakText;
-
-  /* =======================
-     FIREBASE
+     FIREBASE LOAD
   ======================= */
   onAuthStateChanged(auth, async user => {
     if (!user) return;
@@ -351,6 +341,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     firebaseReady = true;
+    stats.score = clampScore(stats.score);
+    stats.level = levelFromScore(stats.score);
     updateUI();
   });
 
