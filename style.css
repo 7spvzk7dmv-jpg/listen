@@ -23,96 +23,52 @@ body {
   max-width: 560px;
   background: #27272a;
   border-radius: 20px;
-  padding: 24px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 22px;
   box-shadow: 0 30px 60px rgba(0,0,0,.55);
 }
 
-/* ===== TOP BAR ===== */
-
-.topbar {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.card.auth {
+  max-width: 380px;
 }
 
-.topbar h1 {
+/* ===== HEADERS ===== */
+
+h1 {
   margin: 0;
   font-size: 22px;
 }
 
-.top-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* ===== CHIPS ===== */
-
-.chip {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: #3f3f46;
-  border: none;
-  color: inherit;
-  cursor: pointer;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-.chip:hover {
-  background: #52525b;
-}
-
-.chip.danger {
-  background: #7f1d1d;
-}
-
-.chip.danger:hover {
-  background: #991b1b;
-}
-
-/* ===== CONTENT ===== */
-
-.content {
+.auth-header {
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
 
-.english {
-  font-size: 28px;
-  font-weight: 500;
-  line-height: 1.4;
-}
-
-.translation {
+.auth-header p {
+  margin: 6px 0 0;
   color: #a1a1aa;
-  font-size: 15px;
+  font-size: 14px;
 }
 
-.level {
-  font-size: 13px;
+/* ===== INPUTS ===== */
+
+input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: #3f3f46;
+  color: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+input::placeholder {
   color: #a1a1aa;
-  font-family: monospace;
 }
 
-/* ===== CONTROLS ===== */
-
-.controls {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-@media (min-width: 480px) {
-  .controls {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
+/* ===== BUTTONS ===== */
 
 .btn {
   padding: 12px;
@@ -136,29 +92,56 @@ body {
   background: #10b981;
 }
 
-/* ===== FEEDBACK ===== */
-
-.feedback {
-  text-align: center;
-  font-size: 14px;
+.btn.google {
+  background: #ffffff;
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
-/* ===== FOOTER ===== */
-
-.footer {
-  text-align: center;
+.btn.google:hover {
+  background: #e5e7eb;
 }
 
-.link {
-  background: none;
-  border: none;
+.btn.google img {
+  width: 18px;
+  height: 18px;
+}
+
+/* ===== AUTH FORM ===== */
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ===== DIVIDER ===== */
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #52525b;
+}
+
+/* ===== ERROR ===== */
+
+.error {
+  text-align: center;
+  font-size: 13px;
   color: #f87171;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.link:hover {
-  text-decoration: underline;
 }
 
 /* ===== UTIL ===== */
