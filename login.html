@@ -4,45 +4,32 @@
   <meta charset="UTF-8" />
   <title>Login – English Trainer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 
-<body class="bg-zinc-900 text-zinc-100 min-h-screen flex items-center justify-center">
+<body>
 
-  <div class="w-full max-w-sm bg-zinc-800 rounded-xl p-6 space-y-4">
+  <div class="auth-box">
 
-    <h1 class="text-xl font-semibold text-center">English Trainer</h1>
+    <h1>English Trainer</h1>
 
-    <input id="email" type="email" placeholder="E-mail"
-      class="w-full p-2 rounded bg-zinc-700 outline-none">
+    <input id="email" type="email" placeholder="E-mail">
+    <input id="password" type="password" placeholder="Senha">
 
-    <input id="password" type="password" placeholder="Senha"
-      class="w-full p-2 rounded bg-zinc-700 outline-none">
+    <button id="loginBtn" class="btn btn-primary">Entrar</button>
+    <button id="registerBtn" class="btn btn-secondary">Criar conta</button>
 
-    <button id="loginBtn"
-      class="w-full bg-emerald-600 py-2 rounded hover:bg-emerald-500">
-      Entrar
-    </button>
-
-    <button id="registerBtn"
-      class="w-full bg-zinc-600 py-2 rounded hover:bg-zinc-500">
-      Criar conta
-    </button>
-
-    <div class="flex items-center gap-2 my-2">
-      <div class="flex-1 h-px bg-zinc-600"></div>
-      <span class="text-xs text-zinc-400">OU</span>
-      <div class="flex-1 h-px bg-zinc-600"></div>
+    <div class="divider">
+      <span class="small">OU</span>
     </div>
 
-    <button id="googleBtn"
-      class="w-full flex items-center justify-center gap-2 bg-white text-black py-2 rounded hover:bg-zinc-200">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-           class="w-5 h-5">
+    <button id="googleBtn" class="btn btn-google">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" height="18">
       Entrar com Google
     </button>
 
-    <p id="msg" class="text-sm text-center text-red-400"></p>
+    <p id="msg" class="small" style="color:#f87171;"></p>
 
   </div>
 
