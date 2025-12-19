@@ -83,15 +83,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     NORMALIZAÇÃO / FONÉTICA REAL
+     FONÉTICA (ROBUSTA)
   ======================= */
-  function normalizeText(t) {
-    return t.toLowerCase().replace(/[^a-z]/g,'').trim();
+  function normalizeWord(w) {
+    return (w || '')
+      .toLowerCase()
+      .replace(/[^a-z]/g,'');
   }
 
-  function phoneticShape(word) {
-    let w = normalizeText(word);
+  function phoneticShape(w) {
+    w = normalizeWord(w);
 
+    // vogais / ditongos
     w = w
       .replace(/ai|ay|ei|ey|igh/g,'ai')
       .replace(/ow|ou|au|aw/g,'au')
@@ -99,6 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/oo|ou|u/g,'u')
       .replace(/oa|o|a/g,'a');
 
+    // consoantes próximas
     w = w
       .replace(/ph/g,'f')
       .replace(/ck|c|q/g,'k')
@@ -107,12 +111,41 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/d/g,'t')
       .replace(/b/g,'p');
 
+    // remove repetições
     w = w.replace(/(.)\1+/g,'$1');
+
     return w;
   }
 
-  function isPhoneticallySame(a, b) {
-    return phoneticShape(a) === phoneticShape(b);
+  /* =======================
+     REGRA CRÍTICA – PALAVRAS CURTAS
+     (RESOLVE "TEA", "KEY", "TO", "MY")
+  ======================= */
+  function isShortWord(target) {
+    return normalizeWord(target).length <= 3;
+  }
+
+  function acceptShortWord(spoken, target) {
+    const s = normalizeWord(spoken);
+    const t = normalizeWord(target);
+
+    // se o usuário falou algo curto (1–4 letras)
+    if (s.length >= 1 && s.length <= 4) {
+      return true; // ACEITA AUTOMATICAMENTE
+    }
+
+    // se falou algo longo tipo "teia", rejeita
+    return false;
+  }
+
+  function isPhoneticallySame(spoken, target) {
+    // REGRA ESPECIAL PRIMEIRO
+    if (isShortWord(target)) {
+      return acceptShortWord(spoken, target);
+    }
+
+    // REGRA NORMAL
+    return phoneticShape(spoken) === phoneticShape(target);
   }
 
   /* =======================
@@ -246,7 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     UI / EVENTS
+     UI
   ======================= */
   function updateUI() {
     hitsEl.textContent = stats.hits;
@@ -258,19 +291,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     examModeBtn.textContent = examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
   }
 
-  function resetProgress() {
-    if (!confirm('Deseja apagar todo o progresso?')) return;
-    stats = { level:'A1', score:0, hits:0, errors:0, streak:0, recent:[] };
-    saveAll();
-    loadDataset();
-    updateUI();
-  }
-
+  /* =======================
+     EVENTS
+  ======================= */
   playBtn.onclick = () => current && speakText(current.ENG);
   micBtn.onclick = listen;
   translateBtn.onclick = () => translationText.classList.toggle('hidden');
   nextBtn.onclick = nextSentence;
-  resetBtn.onclick = resetProgress;
 
   toggleDatasetBtn.onclick = () => {
     datasetKey = datasetKey === 'frases' ? 'palavras' : 'frases';
@@ -281,6 +308,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   examModeBtn.onclick = () => {
     examMode = !examMode;
     nextSentence();
+    updateUI();
+  };
+
+  resetBtn.onclick = () => {
+    if (!confirm('Deseja apagar todo o progresso?')) return;
+    stats = { level:'A1', score:0, hits:0, errors:0, streak:0, recent:[] };
+    saveAll();
+    loadDataset();
     updateUI();
   };
 
@@ -325,8 +360,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     firebaseReady = true;
-    stats.score = clampScore(stats.score);
-    stats.level = levelFromScore(stats.score);
     updateUI();
   });
 
