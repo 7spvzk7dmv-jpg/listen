@@ -2,51 +2,56 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>English Pronunciation Trainer</title>
+  <title>English Trainer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
 
-  <main class="card">
+  <main class="app">
 
     <!-- TOP BAR -->
-    <header class="topbar">
+    <header class="app-top">
       <h1>English Trainer</h1>
 
       <div class="top-actions">
-        <button id="examModeBtn" class="chip">
-          📝 Exame: OFF
-        </button>
-
-        <button id="toggleDataset" class="chip">
+        <button id="toggleDataset" class="pill">
           📚 Frases
         </button>
 
-        <button id="logoutBtn" class="chip danger">
+        <button id="examModeBtn" class="pill">
+          📝 Exame: OFF
+        </button>
+
+        <button id="logoutBtn" class="pill danger">
           Sair
         </button>
       </div>
     </header>
 
-    <!-- CONTENT -->
-    <section class="content">
+    <!-- MAIN CONTENT -->
+    <section class="trainer">
 
-      <p id="englishText" class="english"></p>
+      <p id="englishText" class="prompt"></p>
       <p id="translationText" class="translation hidden"></p>
 
-      <p id="levelText" class="level">
+      <p id="levelText" class="status">
         Nível: A1 | Pontos: 0
       </p>
 
     </section>
 
-    <!-- CONTROLS -->
-    <section class="controls">
+    <!-- PRIMARY ACTION -->
+    <section class="primary-action">
+      <button id="micBtn" class="mic">
+        🎤 Falar
+      </button>
+    </section>
+
+    <!-- SECONDARY ACTIONS -->
+    <section class="actions">
       <button id="playBtn" class="btn">🔊 Ouvir</button>
-      <button id="micBtn" class="btn primary">🎤 Falar</button>
       <button id="translateBtn" class="btn">🇧🇷 Tradução</button>
       <button id="nextBtn" class="btn">➡️ Próxima</button>
     </section>
@@ -54,26 +59,26 @@
     <!-- FEEDBACK -->
     <section class="feedback">
       <p id="feedback"></p>
-      <p>
+      <p class="score">
         ✅ <span id="hits">0</span>
         &nbsp;|&nbsp;
         ❌ <span id="errors">0</span>
       </p>
     </section>
 
-    <!-- RESET -->
+    <!-- FOOTER -->
     <footer class="footer">
-      <button id="resetBtn" class="link">
+      <button id="resetBtn" class="link-danger">
         Resetar progresso
       </button>
     </footer>
 
   </main>
 
-  <!-- Firebase base -->
+  <!-- Firebase -->
   <script type="module" src="firebase.js"></script>
 
-  <!-- Auth guard -->
+  <!-- Auth -->
   <script type="module">
     import { onAuthStateChanged, signOut }
       from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
@@ -91,7 +96,6 @@
     };
   </script>
 
-  <!-- App principal -->
   <script src="app.js"></script>
 
 </body>
