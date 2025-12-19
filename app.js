@@ -1,9 +1,5 @@
 document.addEventListener('DOMContentLoaded', async () => {
 
-  /* =======================
-     FIREBASE
-  ======================= */
-
   const { onAuthStateChanged } =
     await import('https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js');
   const { doc, getDoc, setDoc } =
@@ -15,18 +11,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   let userRef = null;
   let firebaseReady = false;
 
-  /* =======================
-     CONFIG
-  ======================= */
-
   const DATASETS = {
     frases: 'data/frases.json',
     palavras: 'data/palavras.json'
   };
 
   const SCORE_RULES = {
-    hits:   { A1:1,  A2:3,  B1:5,  B2:7,  C1:9,  C2:10 },
-    errors: { A1:-10,A2:-8, B1:-6, B2:-4, C1:-2, C2:-1 }
+    hits:   { A1:1, A2:3, B1:5, B2:7, C1:9, C2:10 },
+    errors: { A1:-10, A2:-8, B1:-6, B2:-4, C1:-2, C2:-1 }
   };
 
   const SCORE_MIN = 0;
@@ -47,10 +39,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let selectedVoice = null;
 
-  /* =======================
-     DOM
-  ======================= */
-
   const englishText = document.getElementById('englishText');
   const translationText = document.getElementById('translationText');
   const feedback = document.getElementById('feedback');
@@ -59,10 +47,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const levelText = document.getElementById('levelText');
   const toggleDatasetBtn = document.getElementById('toggleDataset');
   const examModeBtn = document.getElementById('examModeBtn');
-
-  /* =======================
-     UTIL
-  ======================= */
 
   function clampScore(v) {
     return Math.min(SCORE_MAX, Math.max(SCORE_MIN, v));
@@ -78,16 +62,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function normalize(t) {
-    return t
-      .toLowerCase()
-      .replace(/[^a-z']/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    return t.toLowerCase().replace(/[^a-z']/g,' ').replace(/\s+/g,' ').trim();
   }
 
-  /* =======================
-     AUTH + LOAD
-  ======================= */
+  function normalizePhonetic(w) {
+    return w
+      .replace(/[aeæ]/g,'a')
+      .replace(/[ɛe]/g,'e')
+      .replace(/[ɪi]/g,'i')
+      .replace(/[ɒɔo]/g,'o')
+      .replace(/[ʊu]/g,'u');
+  }
 
   onAuthStateChanged(auth, async user => {
     if (!user) return;
@@ -103,19 +88,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         examMode = saved.examMode || false;
       }
       firebaseReady = true;
-    } catch {
-      console.warn('⚠️ Firestore indisponível');
-    }
+    } catch {}
 
     stats.score = clampScore(stats.score);
     stats.level = levelFromScore(stats.score);
-
     init();
   });
-
-  /* =======================
-     INIT
-  ======================= */
 
   function init() {
     initVoices();
@@ -134,25 +112,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     examModeBtn.onclick = toggleExamMode;
   }
 
-  /* =======================
-     VOICE
-  ======================= */
-
   function initVoices() {
-    const preferred = ['Samantha','Daniel','Aaron'];
     const pick = () => {
       const v = speechSynthesis.getVoices();
-      selectedVoice =
-        v.find(x => preferred.includes(x.name) && x.lang.startsWith('en')) ||
-        v.find(x => x.lang === 'en-US') ||
-        v[0];
+      selectedVoice = v.find(x => x.lang === 'en-US') || v[0];
     };
     pick();
     speechSynthesis.onvoiceschanged = pick;
   }
 
   function speakText(t) {
-    if (!t) return;
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(t);
     u.lang = 'en-US';
@@ -163,95 +132,63 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   window.speakWord = speakText;
 
-  /* =======================
-     DATASET
-  ======================= */
-
   async function loadDataset() {
     const r = await fetch(DATASETS[datasetKey]);
     data = await r.json();
     nextSentence();
   }
 
-  function weightedRandom(items) {
-    const pool = [];
-    items.forEach(i => {
-      const w = stats.weights[i.ENG] || 1;
-      for (let j = 0; j < w; j++) pool.push(i);
-    });
-    return pool[Math.floor(Math.random() * pool.length)];
-  }
-
   function nextSentence() {
     const filtered = data.filter(d => d.CEFR === stats.level);
-    current = weightedRandom(filtered.length ? filtered : data);
-
-    englishText.innerHTML = examMode
-      ? '🎧 Ouça e repita'
-      : current.ENG;
-
+    current = filtered[Math.floor(Math.random() * filtered.length)];
+    englishText.innerHTML = examMode ? '🎧 Ouça e repita' : current.ENG;
     translationText.textContent = current.PTBR;
     translationText.classList.add('hidden');
     feedback.textContent = '';
   }
 
-  /* =======================
-     DIFF COM TOLERÂNCIA
-  ======================= */
-
   function diffWords(spoken, target) {
     const s = spoken.split(' ');
     const t = target.split(' ');
-
     let si = 0;
 
     return t.map(word => {
       let ok = false;
-
       for (let j = si; j <= si + 1 && j < s.length; j++) {
-        if (s[j] === word) {
+        if (
+          s[j] === word ||
+          normalizePhonetic(s[j]) === normalizePhonetic(word)
+        ) {
           ok = true;
           si = j + 1;
           break;
         }
       }
-
       return { word, ok };
     });
   }
 
   function renderDiff(diff) {
     englishText.innerHTML = diff.map(w =>
-      w.ok
-        ? w.word
-        : `<span class="wrong" onclick="speakWord('${w.word}')">${w.word}</span>`
+      w.ok ? w.word :
+      `<span class="wrong" onclick="speakWord('${w.word}')">${w.word}</span>`
     ).join(' ');
   }
-
-  /* =======================
-     STT
-  ======================= */
 
   function adjustLevel(success) {
     const delta = success
       ? SCORE_RULES.hits[current.CEFR]
       : SCORE_RULES.errors[current.CEFR];
-
     stats.score = clampScore(stats.score + delta);
     stats.level = levelFromScore(stats.score);
   }
 
   function listen() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR || !current) {
-      feedback.textContent = '❌ Reconhecimento não suportado';
-      return;
-    }
+    if (!SR || !current) return;
 
     const r = new SR();
     r.lang = 'en-US';
-
-    r.onstart = () => feedback.textContent = '🎙️ Ouvindo...';
 
     r.onresult = e => {
       const spoken = normalize(e.results[0][0].transcript);
@@ -278,10 +215,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     r.start();
   }
 
-  /* =======================
-     UI
-  ======================= */
-
   function toggleDataset() {
     datasetKey = datasetKey === 'frases' ? 'palavras' : 'frases';
     saveAll();
@@ -298,18 +231,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function resetProgress() {
     if (!confirm('Deseja apagar todo o progresso?')) return;
-
-    stats = {
-      level: 'A1',
-      score: 0,
-      hits: 0,
-      errors: 0,
-      weights: {}
-    };
-
+    stats = { level:'A1', score:0, hits:0, errors:0, weights:{} };
     datasetKey = 'frases';
     examMode = false;
-
     saveAll();
     loadDataset();
     updateUI();
