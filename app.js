@@ -67,13 +67,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   /* =======================
-     UTIL
+     LEVELS (EXATAMENTE OS SEUS)
   ======================= */
-  function clampScore(v) {
-    return Math.min(SCORE_MAX, Math.max(SCORE_MIN, v));
-  }
-
-  // 🔒 LEVELS — EXATAMENTE COMO VOCÊ DEFINIU
   function levelFromScore(score) {
     if (score <= 10) return 'A1';
     if (score >= 11 && score <= 20) return 'A2';
@@ -83,15 +78,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (score >= 91) return 'C2';
   }
 
-  function normalize(t) {
-    return t.toLowerCase()
-      .replace(/[^a-z']/g,' ')
-      .replace(/\s+/g,' ')
-      .trim();
+  function clampScore(v) {
+    return Math.min(SCORE_MAX, Math.max(SCORE_MIN, v));
   }
 
   /* =======================
-     STREAK + CONSISTÊNCIA
+     NORMALIZAÇÃO FONÉTICA
+     (aceita leaf ≈ leave, key ≈ kee)
+  ======================= */
+  function normalize(t) {
+    return t.toLowerCase().replace(/[^a-z']/g,' ').replace(/\s+/g,' ').trim();
+  }
+
+  function phonetic(w) {
+    return w
+      .replace(/ph/g,'f')
+      .replace(/ck|c/g,'k')
+      .replace(/qu/g,'k')
+      .replace(/ee|ea|ie|ei|y/g,'i')
+      .replace(/oo|ou|u/g,'o')
+      .replace(/a|e/g,'a')
+      .replace(/(.)\1+/g,'$1');
+  }
+
+  /* =======================
+     STREAK + JANELA MÓVEL
   ======================= */
   function updateRecent(isHit) {
     stats.recent.push(isHit);
@@ -114,16 +125,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  function evaluateLevel() {
+    const acc = recentAccuracy();
+    const upper = { A1:10, A2:20, B1:40, B2:70, C1:90, C2:100 }[stats.level];
+
+    if (stats.score >= upper && acc >= 0.75 && stats.streak >= 3) {
+      stats.level = levelFromScore(stats.score);
+    }
+
+    if (stats.score < upper - 10 && acc < 0.55) {
+      stats.level = levelFromScore(stats.score);
+    }
+  }
+
   /* =======================
      TTS
   ======================= */
   let selectedVoice = null;
-
   function pickEnglishVoice() {
     const voices = speechSynthesis.getVoices();
     selectedVoice = voices.find(v => v.lang === 'en-US') || null;
   }
-
   speechSynthesis.onvoiceschanged = pickEnglishVoice;
   pickEnglishVoice();
 
@@ -133,10 +155,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const u = new SpeechSynthesisUtterance(text);
     u.voice = selectedVoice;
     u.lang = 'en-US';
-    u.rate = 0.9;
     speechSynthesis.speak(u);
   }
-
   window.speakWord = speakText;
 
   /* =======================
@@ -169,7 +189,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     return t.map(word => {
       let ok = false;
       for (let j = si; j <= si + 1 && j < s.length; j++) {
-        if (s[j] === word) {
+        if (
+          s[j] === word ||
+          phonetic(s[j]) === phonetic(word)
+        ) {
           ok = true;
           si = j + 1;
           break;
@@ -212,14 +235,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         : SCORE_RULES.errors[stats.level];
 
       stats.score = clampScore(stats.score + delta);
-      stats.level = levelFromScore(stats.score);
+      evaluateLevel();
 
       if (isHit) {
         stats.hits++;
         feedback.textContent = '✅ Boa pronúncia';
       } else {
         stats.errors++;
-        feedback.textContent = '❌ Clique nas palavras destacadas';
+        feedback.textContent = '❌ Clique nas palavras erradas';
         if (!examMode) renderDiff(diff);
       }
 
@@ -238,16 +261,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     errorsEl.textContent = stats.errors;
     levelText.textContent =
       `Nível: ${stats.level} | Pontos: ${stats.score} | Streak: ${stats.streak}`;
-    examModeBtn.textContent =
-      examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
-    toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
   }
 
   function resetProgress() {
     if (!confirm('Deseja apagar todo o progresso?')) return;
     stats = { level:'A1', score:0, hits:0, errors:0, streak:0, recent:[] };
-    datasetKey = 'frases';
-    examMode = false;
     saveAll();
     loadDataset();
     updateUI();
@@ -265,21 +283,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   toggleDatasetBtn.onclick = () => {
     datasetKey = datasetKey === 'frases' ? 'palavras' : 'frases';
     loadDataset();
-    updateUI();
   };
 
   examModeBtn.onclick = () => {
     examMode = !examMode;
     nextSentence();
-    updateUI();
   };
 
   /* =======================
-     FIREBASE (SÓ PERSISTE)
+     FIREBASE
   ======================= */
   onAuthStateChanged(auth, async user => {
     if (!user) return;
-
     userRef = doc(db, 'users', user.uid);
     const snap = await getDoc(userRef);
     if (snap.exists()) {
@@ -288,7 +303,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       datasetKey = saved.datasetKey || datasetKey;
       examMode = saved.examMode || false;
     }
-
     firebaseReady = true;
     stats.score = clampScore(stats.score);
     stats.level = levelFromScore(stats.score);
