@@ -1,6 +1,42 @@
 document.addEventListener('DOMContentLoaded', async () => {
 
   /* =======================
+     STYLE INJECTION (VISUAL)
+  ======================= */
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes pulseWrong {
+      0% { background-color: rgba(248,113,113,0.15); }
+      50% { background-color: rgba(248,113,113,0.35); }
+      100% { background-color: rgba(248,113,113,0.15); }
+    }
+    .wrong {
+      color: #f87171;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: underline;
+      padding: 0 2px;
+      border-radius: 4px;
+      animation: pulseWrong 1.5s ease-in-out infinite;
+    }
+    .flash-hit {
+      animation: flashHit 0.6s ease-out;
+    }
+    .flash-error {
+      animation: flashError 0.6s ease-out;
+    }
+    @keyframes flashHit {
+      from { background-color: rgba(34,197,94,0.25); }
+      to { background-color: transparent; }
+    }
+    @keyframes flashError {
+      from { background-color: rgba(248,113,113,0.25); }
+      to { background-color: transparent; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  /* =======================
      FIREBASE
   ======================= */
   const { onAuthStateChanged } =
@@ -33,7 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const levelText = document.getElementById('levelText');
 
   /* =======================
-     CONFIG
+     CONFIG / STATE
   ======================= */
   const DATASETS = {
     frases: 'data/frases.json',
@@ -49,9 +85,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const SCORE_MAX = 100;
   const WINDOW_SIZE = 10;
 
-  /* =======================
-     ESTADO
-  ======================= */
   let datasetKey = 'frases';
   let data = [];
   let current = null;
@@ -67,7 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   /* =======================
-     LEVELS (EXATAMENTE OS SEUS)
+     LEVELS (EXATOS)
   ======================= */
   function levelFromScore(score) {
     if (score <= 10) return 'A1';
@@ -84,7 +117,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   /* =======================
      NORMALIZAÇÃO FONÉTICA
-     (aceita leaf ≈ leave, key ≈ kee)
   ======================= */
   function normalize(t) {
     return t.toLowerCase().replace(/[^a-z']/g,' ').replace(/\s+/g,' ').trim();
@@ -102,7 +134,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     STREAK + JANELA MÓVEL
+     STREAK / CONSISTÊNCIA
   ======================= */
   function updateRecent(isHit) {
     stats.recent.push(isHit);
@@ -172,14 +204,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const filtered = data.filter(d => d.CEFR === stats.level);
     if (!filtered.length) return;
     current = filtered[Math.floor(Math.random() * filtered.length)];
+
+    englishText.classList.remove('flash-hit','flash-error');
     englishText.innerHTML = examMode ? '🎧 Ouça e repita' : current.ENG;
+
     translationText.textContent = current.PTBR;
     translationText.classList.add('hidden');
     feedback.textContent = '';
   }
 
   /* =======================
-     DIFF + HIGHLIGHT
+     DIFF + RENDER (VISUAL)
   ======================= */
   function diffWords(spoken, target) {
     const s = spoken.split(' ');
@@ -189,10 +224,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return t.map(word => {
       let ok = false;
       for (let j = si; j <= si + 1 && j < s.length; j++) {
-        if (
-          s[j] === word ||
-          phonetic(s[j]) === phonetic(word)
-        ) {
+        if (s[j] === word || phonetic(s[j]) === phonetic(word)) {
           ok = true;
           si = j + 1;
           break;
@@ -204,8 +236,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function renderDiff(diff) {
     englishText.innerHTML = diff.map(w =>
-      w.ok ? w.word :
-      `<span class="wrong" onclick="speakWord('${w.word}')">${w.word}</span>`
+      w.ok
+        ? `<span>${w.word}</span>`
+        : `<span class="wrong" onclick="speakWord('${w.word}')">${w.word}</span>`
     ).join(' ');
   }
 
@@ -237,12 +270,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       stats.score = clampScore(stats.score + delta);
       evaluateLevel();
 
+      englishText.classList.remove('flash-hit','flash-error');
+      void englishText.offsetWidth;
+
       if (isHit) {
         stats.hits++;
         feedback.textContent = '✅ Boa pronúncia';
+        englishText.classList.add('flash-hit');
       } else {
         stats.errors++;
         feedback.textContent = '❌ Clique nas palavras erradas';
+        englishText.classList.add('flash-error');
         if (!examMode) renderDiff(diff);
       }
 
@@ -254,7 +292,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     UI
+     UI / EVENTS
   ======================= */
   function updateUI() {
     hitsEl.textContent = stats.hits;
@@ -271,9 +309,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateUI();
   }
 
-  /* =======================
-     EVENTOS
-  ======================= */
   playBtn.onclick = () => current && speakText(current.ENG);
   micBtn.onclick = listen;
   translateBtn.onclick = () => translationText.classList.toggle('hidden');
