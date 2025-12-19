@@ -5,99 +5,53 @@
   <title>English Pronunciation Trainer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- CSS mínimo que NÃO depende do Tailwind -->
-  <style>
-    .hidden { display: none; }
-    .wrong {
-      color: #f87171;
-      cursor: pointer;
-      font-weight: 600;
-      text-decoration: underline;
-    }
-    .wrong:hover { color: #fca5a5; }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 
-<body class="bg-zinc-900 text-zinc-100 min-h-screen flex items-center justify-center px-4">
+<body>
 
-  <div class="w-full max-w-xl bg-zinc-800 rounded-2xl shadow-lg p-6 space-y-6">
+  <div class="app">
 
-    <!-- HEADER -->
-    <header class="flex justify-between items-center flex-wrap gap-3">
-      <h1 class="text-xl font-semibold">English Trainer</h1>
+    <header class="header">
+      <h1>English Trainer</h1>
 
-      <div class="flex gap-2 flex-wrap justify-end">
-        <button id="logoutBtn"
-          class="text-sm bg-red-600 px-3 py-1 rounded hover:bg-red-500">
-          Sair
-        </button>
-
-        <button id="examModeBtn"
-          class="text-sm bg-zinc-700 px-3 py-1 rounded hover:bg-zinc-600">
-          📝 Modo exame: OFF
-        </button>
-
-        <button id="toggleDataset"
-          class="text-sm bg-zinc-700 px-3 py-1 rounded hover:bg-zinc-600">
-          Dataset: frases
-        </button>
+      <div class="header-actions">
+        <button id="logoutBtn" class="btn btn-danger">Sair</button>
+        <button id="examModeBtn" class="btn">📝 Modo exame: OFF</button>
+        <button id="toggleDataset" class="btn">Dataset: frases</button>
       </div>
     </header>
 
-    <!-- TEXTO PRINCIPAL -->
-    <div class="text-center space-y-3">
-      <p id="englishText" class="text-2xl font-medium leading-relaxed select-text"></p>
-      <p id="translationText" class="text-zinc-400 hidden"></p>
+    <main class="content">
+      <p id="englishText" class="english"></p>
+      <p id="translationText" class="translation hidden"></p>
 
-      <p id="levelText" class="text-sm text-zinc-400 font-mono">
+      <p id="levelText" class="level">
         Nível: A1 | Pontos: 0 | Streak: 0
       </p>
-    </div>
+    </main>
 
-    <!-- CONTROLES -->
-    <div class="flex justify-center gap-3 flex-wrap">
-      <button id="playBtn"
-        class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
-        🔊 Ouvir
-      </button>
+    <section class="controls">
+      <button id="playBtn" class="btn">🔊 Ouvir</button>
+      <button id="micBtn" class="btn">🎤 Falar</button>
+      <button id="translateBtn" class="btn">🇧🇷 Tradução</button>
+      <button id="nextBtn" class="btn">➡️ Próxima</button>
+    </section>
 
-      <button id="micBtn"
-        class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
-        🎤 Falar
-      </button>
-
-      <button id="translateBtn"
-        class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
-        🇧🇷 Tradução
-      </button>
-
-      <button id="nextBtn"
-        class="bg-zinc-700 px-4 py-2 rounded-lg hover:bg-zinc-600">
-        ➡️ Próxima
-      </button>
-    </div>
-
-    <!-- FEEDBACK -->
-    <div class="text-center text-sm space-y-1">
+    <section class="feedback">
       <p id="feedback"></p>
       <p>
         ✅ <span id="hits">0</span>
         &nbsp;|&nbsp;
         ❌ <span id="errors">0</span>
       </p>
-    </div>
+    </section>
 
-    <!-- RESET -->
-    <div class="text-center">
-      <button id="resetBtn" class="text-red-400 hover:underline">
-        Resetar progresso
-      </button>
-    </div>
+    <footer class="reset">
+      <button id="resetBtn" class="link-danger">Resetar progresso</button>
+    </footer>
 
   </div>
-
-  <!-- 🔥 TAILWIND CDN (CRÍTICO PARA SAFARI) -->
-  <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Firebase base -->
   <script type="module" src="firebase.js"></script>
@@ -120,7 +74,7 @@
     };
   </script>
 
-  <!-- App principal -->
+  <!-- App -->
   <script src="app.js"></script>
 
 </body>
