@@ -1,3 +1,4 @@
+<script>
 document.addEventListener('DOMContentLoaded', async () => {
 
   const { onAuthStateChanged } =
@@ -51,7 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const examModeBtn = document.getElementById('examModeBtn');
 
   /* =======================
-     TTS ROBUSTO
+     TTS
   ======================= */
 
   let selectedVoice = null;
@@ -68,16 +69,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   pickEnglishVoice();
 
   function speakText(text) {
-    if (!selectedVoice) {
-      feedback.textContent = '⚠️ Voz inglesa indisponível';
-      return;
-    }
+    if (!selectedVoice) return;
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.voice = selectedVoice;
     u.lang = 'en-US';
     u.rate = 0.9;
-    u.pitch = 1;
     speechSynthesis.speak(u);
   }
 
@@ -91,8 +88,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     return Math.min(SCORE_MAX, Math.max(SCORE_MIN, v));
   }
 
+  // 🔴 FUNÇÃO ORIGINAL RESTAURADA
   function levelFromScore(score) {
-    if (score <= 20) return 'A1';
+    if (score <= 10) return 'A1';
     if (score >= 11 && score <= 20) return 'A2';
     if (score >= 21 && score <= 40) return 'B1';
     if (score >= 41 && score <= 70) return 'B2';
@@ -176,7 +174,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     STT COM TOLERÂNCIA VOCÁLICA
+     STT + SCORE
   ======================= */
 
   function diffWords(spoken, target) {
@@ -186,7 +184,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     return t.map(word => {
       let ok = false;
-
       for (let j = si; j <= si + 1 && j < s.length; j++) {
         if (
           s[j] === word ||
@@ -210,6 +207,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     ).join(' ');
   }
 
+  function applyScore(isHit) {
+    const delta = isHit
+      ? SCORE_RULES.hits[stats.level]
+      : SCORE_RULES.errors[stats.level];
+
+    stats.score = clampScore(stats.score + delta);
+    stats.level = levelFromScore(stats.score);
+  }
+
   function listen() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR || !current) return;
@@ -227,9 +233,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (accuracy >= 0.6) {
         feedback.textContent = '✅ Boa pronúncia';
         stats.hits++;
+        applyScore(true);
       } else {
         feedback.textContent = '❌ Clique nas palavras destacadas';
         stats.errors++;
+        applyScore(false);
         if (!examMode) renderDiff(diff);
       }
 
@@ -282,3 +290,4 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
 });
+</script>
