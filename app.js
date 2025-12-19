@@ -86,7 +86,10 @@ document.addEventListener('DOMContentLoaded', async () => {
      NORMALIZAÇÃO FONÉTICA
   ======================= */
   function normalize(t) {
-    return t.toLowerCase().replace(/[^a-z']/g,' ').replace(/\s+/g,' ').trim();
+    return t.toLowerCase()
+      .replace(/[^a-z']/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
   }
 
   function phonetic(w) {
@@ -141,10 +144,12 @@ document.addEventListener('DOMContentLoaded', async () => {
      TTS
   ======================= */
   let selectedVoice = null;
+
   function pickEnglishVoice() {
     const voices = speechSynthesis.getVoices();
     selectedVoice = voices.find(v => v.lang === 'en-US') || null;
   }
+
   speechSynthesis.onvoiceschanged = pickEnglishVoice;
   pickEnglishVoice();
 
@@ -156,6 +161,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     u.lang = 'en-US';
     speechSynthesis.speak(u);
   }
+
   window.speakWord = speakText;
 
   /* =======================
@@ -179,7 +185,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     DIFF + HIGHLIGHT (SAFARI SAFE)
+     DIFF + HIGHLIGHT
   ======================= */
   function diffWords(spoken, target) {
     const s = spoken.split(' ');
@@ -203,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     englishText.innerHTML = diff.map(w =>
       w.ok
         ? `<span>${w.word}</span>`
-        : `<span class="wrong" style="background-color: rgba(248,113,113,0.25); padding: 0 4px; border-radius: 4px;" onclick="speakWord('${w.word}')">${w.word}</span>`
+        : `<span class="wrong" onclick="speakWord('${w.word}')">${w.word}</span>`
     ).join(' ');
   }
 
@@ -238,13 +244,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (isHit) {
         stats.hits++;
         feedback.textContent = '✅ Boa pronúncia';
-        englishText.style.backgroundColor = 'rgba(34,197,94,0.25)';
-        setTimeout(() => englishText.style.backgroundColor = 'transparent', 300);
       } else {
         stats.errors++;
         feedback.textContent = '❌ Clique nas palavras erradas';
-        englishText.style.backgroundColor = 'rgba(248,113,113,0.25)';
-        setTimeout(() => englishText.style.backgroundColor = 'transparent', 300);
         if (!examMode) renderDiff(diff);
       }
 
@@ -294,14 +296,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   ======================= */
   onAuthStateChanged(auth, async user => {
     if (!user) return;
+
     userRef = doc(db, 'users', user.uid);
     const snap = await getDoc(userRef);
+
     if (snap.exists()) {
       const saved = snap.data();
       stats = { ...stats, ...(saved.stats || {}) };
       datasetKey = saved.datasetKey || datasetKey;
       examMode = saved.examMode || false;
     }
+
     firebaseReady = true;
     stats.score = clampScore(stats.score);
     stats.level = levelFromScore(stats.score);
