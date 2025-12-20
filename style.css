@@ -13,17 +13,17 @@ html, body {
 
 body {
   min-height: 100vh;
-  background: linear-gradient(180deg, #0b0d12, #07090d);
-  color: #e6e8eb;
+  background: #0f1115;           /* dark neutral */
+  color: #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
+
   font-family:
     -apple-system,
     BlinkMacSystemFont,
     "SF Pro Text",
-    "Inter",
     system-ui,
     sans-serif;
 }
@@ -34,17 +34,16 @@ body {
 
 .app {
   width: 100%;
-  max-width: 520px;
-  background: rgba(18, 22, 30, 0.95);
-  border-radius: 22px;
-  padding: 28px 26px 30px;
+  max-width: 560px;
+  background: #16181d;           /* card dark */
+  border-radius: 18px;
+  padding: 28px 24px;
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: 24px;
 
   box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.65),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    0 12px 40px rgba(0,0,0,.55);
 }
 
 /* =====================
@@ -54,80 +53,75 @@ body {
 .app-top {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .app-top h1 {
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
   letter-spacing: 0.2px;
 }
 
+/* =====================
+   TOP ACTIONS
+===================== */
+
 .top-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-/* =====================
-   TOP ACTIONS (CHIPS)
-===================== */
-
 .pill {
-  padding: 7px 14px;
+  padding: 6px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.02);
-  color: #d4d7dc;
+  border: 1px solid #2a2d34;
+  background: #1c1f26;
+  color: #d1d5db;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  white-space: nowrap;
-
-  transition: background .15s ease, border-color .15s ease;
 }
 
 .pill:hover {
-  background: rgba(255,255,255,0.06);
-  border-color: rgba(255,255,255,0.14);
+  background: #242833;
 }
 
 .pill.danger {
-  color: #f2b8b8;
-  border-color: rgba(248,113,113,0.35);
+  color: #fca5a5;
+  border-color: #3b1d1d;
 }
 
 .pill.danger:hover {
-  background: rgba(248,113,113,0.12);
+  background: #3b1d1d;
 }
 
 /* =====================
-   MAIN TRAINER
+   TRAINER
 ===================== */
 
 .trainer {
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .prompt {
-  font-size: 30px;
+  font-size: 26px;
   font-weight: 500;
   line-height: 1.35;
-  letter-spacing: 0.2px;
 }
 
 .translation {
   font-size: 15px;
-  color: #9aa0aa;
+  color: #9ca3af;
 }
 
 .status {
   font-size: 13px;
-  color: #8b9098;
+  color: #9ca3af;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -141,31 +135,21 @@ body {
 }
 
 .mic {
-  width: 132px;
-  height: 132px;
-  border-radius: 50%;
-  border: none;
-
-  background:
-    radial-gradient(circle at 30% 30%, #2dd4bf, #0f766e);
-  color: #042f2e;
-
-  font-size: 17px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: 1px solid #22c55e;
+  background: #22c55e;
+  color: #052e16;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
 
-  box-shadow:
-    0 18px 45px rgba(45, 212, 191, 0.35),
-    inset 0 2px 4px rgba(255,255,255,0.25);
-
-  transition: transform .15s ease, box-shadow .15s ease;
+  transition: background .15s ease, transform .15s ease;
 }
 
 .mic:hover {
-  transform: scale(1.04);
-  box-shadow:
-    0 22px 55px rgba(45, 212, 191, 0.45),
-    inset 0 2px 4px rgba(255,255,255,0.3);
+  background: #16a34a;
+  transform: translateY(-1px);
 }
 
 /* =====================
@@ -175,26 +159,28 @@ body {
 .actions {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 12px;
+}
+
+@media (max-width: 420px) {
+  .actions {
+    grid-template-columns: 1fr;
+  }
 }
 
 .btn {
-  padding: 13px 10px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
-  color: #d4d7dc;
-
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #2a2d34;
+  background: #1c1f26;
+  color: #d1d5db;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-
-  transition: background .15s ease, border-color .15s ease;
 }
 
 .btn:hover {
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.16);
+  background: #242833;
 }
 
 /* =====================
@@ -208,7 +194,7 @@ body {
 
 .score {
   margin-top: 4px;
-  color: #9aa0aa;
+  color: #9ca3af;
 }
 
 /* =====================
@@ -229,6 +215,25 @@ body {
 
 .link-danger:hover {
   text-decoration: underline;
+}
+
+/* =====================
+   LOGIN SUPPORT
+===================== */
+
+input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #2a2d34;
+  background: #1c1f26;
+  color: #e5e7eb;
+  font-size: 14px;
+  outline: none;
+}
+
+input::placeholder {
+  color: #9ca3af;
 }
 
 /* =====================
