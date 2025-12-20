@@ -1,5 +1,5 @@
 /* =====================
-   RESET / BASE
+   RESET / SAFE AREA
 ===================== */
 
 * {
@@ -9,16 +9,23 @@
 html, body {
   margin: 0;
   padding: 0;
+  height: 100%;
 }
 
 body {
-  min-height: 100vh;
-  background: #0f1115;           /* dark neutral */
+  min-height: 100dvh;
+  background: #0e1014;
   color: #e5e7eb;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+
+  padding:
+    16px
+    16px
+    calc(16px + env(safe-area-inset-bottom))
+    16px;
 
   font-family:
     -apple-system,
@@ -35,15 +42,14 @@ body {
 .app {
   width: 100%;
   max-width: 560px;
-  background: #16181d;           /* card dark */
-  border-radius: 18px;
-  padding: 28px 24px;
+  background: #16181d;
+  border-radius: 20px;
+  padding: 24px 22px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 22px;
 
-  box-shadow:
-    0 12px 40px rgba(0,0,0,.55);
+  box-shadow: 0 10px 40px rgba(0,0,0,.6);
 }
 
 /* =====================
@@ -53,14 +59,13 @@ body {
 .app-top {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .app-top h1 {
   margin: 0;
   font-size: 20px;
   font-weight: 600;
-  letter-spacing: 0.2px;
 }
 
 /* =====================
@@ -93,10 +98,6 @@ body {
   border-color: #3b1d1d;
 }
 
-.pill.danger:hover {
-  background: #3b1d1d;
-}
-
 /* =====================
    TRAINER
 ===================== */
@@ -105,7 +106,7 @@ body {
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
 .prompt {
@@ -115,7 +116,7 @@ body {
 }
 
 .translation {
-  font-size: 15px;
+  font-size: 14px;
   color: #9ca3af;
 }
 
@@ -126,30 +127,74 @@ body {
 }
 
 /* =====================
-   PRIMARY ACTION
+   PRIMARY ACTION (MIC)
 ===================== */
 
 .primary-action {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .mic {
-  padding: 14px 28px;
-  border-radius: 999px;
-  border: 1px solid #22c55e;
-  background: #22c55e;
-  color: #052e16;
-  font-size: 15px;
-  font-weight: 600;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 1px solid #2a2d34;
+  background-color: #1c1f26;
   cursor: pointer;
 
-  transition: background .15s ease, transform .15s ease;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 28px 28px;
+
+  /* SVG monocromático embutido */
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e5e7eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>\
+<rect x='9' y='2' width='6' height='11' rx='3'/>\
+<path d='M5 10v2a7 7 0 0 0 14 0v-2'/>\
+<line x1='12' y1='19' x2='12' y2='22'/>\
+</svg>");
 }
 
+/* Hover */
 .mic:hover {
-  background: #16a34a;
-  transform: translateY(-1px);
+  background-color: #242833;
+}
+
+/* =====================
+   LISTENING ANIMATION
+===================== */
+
+/* quando o JS adicionar .listening */
+.mic.listening {
+  animation: mic-pulse 1.4s ease-in-out infinite;
+  border-color: #3b82f6;
+}
+
+@keyframes mic-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(59,130,246,0.35); }
+  70%  { box-shadow: 0 0 0 10px rgba(59,130,246,0); }
+  100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+}
+
+/* =====================
+   FEEDBACK STATES
+===================== */
+
+/* sucesso */
+.app.success {
+  box-shadow:
+    0 0 0 1px rgba(34,197,94,0.4),
+    0 10px 40px rgba(0,0,0,.6);
+}
+
+/* erro */
+.app.error {
+  box-shadow:
+    0 0 0 1px rgba(248,113,113,0.4),
+    0 10px 40px rgba(0,0,0,.6);
 }
 
 /* =====================
@@ -184,7 +229,7 @@ body {
 }
 
 /* =====================
-   FEEDBACK
+   FEEDBACK TEXT
 ===================== */
 
 .feedback {
@@ -198,27 +243,7 @@ body {
 }
 
 /* =====================
-   FOOTER
-===================== */
-
-.footer {
-  text-align: center;
-}
-
-.link-danger {
-  background: none;
-  border: none;
-  color: #f87171;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.link-danger:hover {
-  text-decoration: underline;
-}
-
-/* =====================
-   LOGIN SUPPORT
+   LOGIN INPUTS
 ===================== */
 
 input {
@@ -229,7 +254,6 @@ input {
   background: #1c1f26;
   color: #e5e7eb;
   font-size: 14px;
-  outline: none;
 }
 
 input::placeholder {
@@ -249,8 +273,4 @@ input::placeholder {
   cursor: pointer;
   font-weight: 600;
   text-decoration: underline;
-}
-
-.wrong:hover {
-  color: #fda4af;
 }
