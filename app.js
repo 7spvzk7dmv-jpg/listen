@@ -84,30 +84,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     Math.min(SCORE_MAX, Math.max(SCORE_MIN, v));
 
   /* =======================
-     TTS (NARRAÇÃO)
+     TTS — SAFARI SAFE
   ======================= */
-  let selectedVoice = null;
-
-  function pickEnglishVoice() {
-    const voices = speechSynthesis.getVoices();
-    selectedVoice =
-      voices.find(v => v.lang === 'en-US') ||
-      voices.find(v => v.lang.startsWith('en')) ||
-      null;
-  }
-
-  speechSynthesis.onvoiceschanged = pickEnglishVoice;
-  pickEnglishVoice();
 
   function speakWord(text) {
-    if (!text) return;
-    speechSynthesis.cancel();
+    if (!text || !window.speechSynthesis) return;
+
+    window.speechSynthesis.cancel();
 
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-US';
-    u.voice = selectedVoice;
     u.rate = 0.9;
     u.pitch = 1;
+
+    // ⚠️ NÃO setar voice no Safari se não existir
+    const voices = speechSynthesis.getVoices();
+    const enVoice = voices.find(v => v.lang === 'en-US');
+    if (enVoice) u.voice = enVoice;
 
     speechSynthesis.speak(u);
   }
@@ -314,7 +307,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     levelText.textContent =
       `Nível: ${stats.level} | Pontos: ${stats.score} | Streak: ${stats.streak}`;
 
-    toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
+    toggleDatasetBtn.textContent = datasetKey === 'frases' ? 'Frases' : 'Palavras';
     examModeBtn.textContent =
       examMode ? 'Exame: ON' : 'Exame: OFF';
   }
