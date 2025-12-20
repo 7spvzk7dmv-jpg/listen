@@ -1460,13 +1460,71 @@
   { "ENG": "on substantive grounds", "PTBR": "com base substantiva", "CEFR": "C1" },
   { "ENG": "as circumstances warrant", "PTBR": "conforme as circunstâncias", "CEFR": "C1" },
   { "ENG": "in keeping with best practice", "PTBR": "em consonância com as melhores práticas", "CEFR": "C1" },
-  { "ENG": "to the best of one's knowledge", "PTBR": "até onde se sabe", "CEFR": "C1" }
+  { "ENG": "to the best of one's knowledge", "PTBR": "até onde se sabe", "CEFR": "C1" },
+
+  { "ENG": "awkwardness", "PTBR": "constrangimento", "CEFR": "C2" },
+  { "ENG": "nonchalant", "PTBR": "despreocupado", "CEFR": "C2" },
+  { "ENG": "overthinker", "PTBR": "pessoa que pensa demais", "CEFR": "C2" },
+  { "ENG": "underwhelmed", "PTBR": "pouco impressionado", "CEFR": "C2" },
+  { "ENG": "overstimulated", "PTBR": "superestimulado", "CEFR": "C2" },
+  { "ENG": "wholesome", "PTBR": "reconfortante", "CEFR": "C2" },
+  { "ENG": "bittersweet", "PTBR": "agridoce", "CEFR": "C2" },
+  { "ENG": "mindful", "PTBR": "consciente", "CEFR": "C2" },
+  { "ENG": "clueless", "PTBR": "sem noção", "CEFR": "C2" },
+  { "ENG": "burnout", "PTBR": "esgotamento", "CEFR": "C2" },
+
+  { "ENG": "relatable", "PTBR": "identificável", "CEFR": "C2" },
+  { "ENG": "unhinged", "PTBR": "fora de controle", "CEFR": "C2" },
+  { "ENG": "lowkey", "PTBR": "discretamente", "CEFR": "C2" },
+  { "ENG": "highkey", "PTBR": "escancaradamente", "CEFR": "C2" },
+  { "ENG": "vibes", "PTBR": "clima", "CEFR": "C2" },
+  { "ENG": "cringe", "PTBR": "vergonhoso", "CEFR": "C2" },
+  { "ENG": "awkward", "PTBR": "constrangedor", "CEFR": "C2" },
+  { "ENG": "sarcasm", "PTBR": "sarcasmo", "CEFR": "C2" },
+  { "ENG": "deadpan", "PTBR": "sem expressão", "CEFR": "C2" },
+  { "ENG": "snarky", "PTBR": "irônico", "CEFR": "C2" },
+
+  { "ENG": "rant", "PTBR": "desabafo", "CEFR": "C2" },
+  { "ENG": "rambling", "PTBR": "divagação", "CEFR": "C2" },
+  { "ENG": "overkill", "PTBR": "exagero", "CEFR": "C2" },
+  { "ENG": "petty", "PTBR": "mesquinho", "CEFR": "C2" },
+  { "ENG": "passive-aggressive", "PTBR": "passivo-agressivo", "CEFR": "C2" },
+  { "ENG": "sarcastic", "PTBR": "sarcástico", "CEFR": "C2" },
+  { "ENG": "dismissive", "PTBR": "desdenhoso", "CEFR": "C2" },
+  { "ENG": "nonissue", "PTBR": "falso problema", "CEFR": "C2" },
+  { "ENG": "overshare", "PTBR": "expor demais", "CEFR": "C2" },
+  { "ENG": "undersell", "PTBR": "minimizar", "CEFR": "C2" },
+
+  { "ENG": "misread", "PTBR": "interpretar mal", "CEFR": "C2" },
+  { "ENG": "secondhand", "PTBR": "indireto", "CEFR": "C2" },
+  { "ENG": "fickle", "PTBR": "instável", "CEFR": "C2" },
+  { "ENG": "jaded", "PTBR": "cético", "CEFR": "C2" },
+  { "ENG": "frazzled", "PTBR": "exausto", "CEFR": "C2" },
+  { "ENG": "scatterbrained", "PTBR": "desatento", "CEFR": "C2" },
+  { "ENG": "aloof", "PTBR": "distante", "CEFR": "C2" },
+  { "ENG": "detached", "PTBR": "desapegado", "CEFR": "C2" },
+  { "ENG": "overloaded", "PTBR": "sobrecarregado", "CEFR": "C2" },
+  { "ENG": "underprepared", "PTBR": "mal preparado", "CEFR": "C2" },
+
+  { "ENG": "impulsive", "PTBR": "impulsivo", "CEFR": "C2" },
+  { "ENG": "hesitant", "PTBR": "hesitante", "CEFR": "C2" },
+  { "ENG": "wishful", "PTBR": "ilusório", "CEFR": "C2" },
+  { "ENG": "restless", "PTBR": "inquieto", "CEFR": "C2" },
+  { "ENG": "grounded", "PTBR": "pé no chão", "CEFR": "C2" },
+  { "ENG": "self-aware", "PTBR": "autoconsciente", "CEFR": "C2" },
+  { "ENG": "unfiltered", "PTBR": "sem filtro", "CEFR": "C2" },
+  { "ENG": "matter-of-fact", "PTBR": "direto", "CEFR": "C2" },
+  { "ENG": "introspective", "PTBR": "introspectivo", "CEFR": "C2" },
+  { "ENG": "self-conscious", "PTBR": "inseguro", "CEFR": "C2" },
+
+  { "ENG": "deflated", "PTBR": "desanimado", "CEFR": "C2" },
+  { "ENG": "energized", "PTBR": "energizado", "CEFR": "C2" },
+  { "ENG": "burned-out", "PTBR": "esgotado", "CEFR": "C2" },
+  { "ENG": "recharged", "PTBR": "revigorado", "CEFR": "C2" },
+  { "ENG": "triggered", "PTBR": "ativado emocionalmente", "CEFR": "C2" },
+  { "ENG": "unbothered", "PTBR": "indiferente", "CEFR": "C2" },
+  { "ENG": "overattached", "PTBR": "apegado demais", "CEFR": "C2" },
+  { "ENG": "disillusioned", "PTBR": "desiludido", "CEFR": "C2" },
+  { "ENG": "hopeful", "PTBR": "esperançoso", "CEFR": "C2" },
+  { "ENG": "content", "PTBR": "satisfeito", "CEFR": "C2" }
 ]
-
-
-
-
-
-
-
-
