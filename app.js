@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* =======================
      DOM
   ======================= */
+  const app = document.querySelector('.app');
+
   const playBtn = document.getElementById('playBtn');
   const micBtn = document.getElementById('micBtn');
   const translateBtn = document.getElementById('translateBtn');
@@ -67,7 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   /* =======================
-     LEVELS — EXATOS (SEM ALTERAÇÃO)
+     LEVELS (EXATOS)
   ======================= */
   function levelFromScore(score) {
     if (score <= 10) return 'A1';
@@ -86,8 +88,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   ======================= */
   function normalizeText(t) {
     return t.toLowerCase()
-      .replace(/[^a-z']/g, ' ')
-      .replace(/\s+/g, ' ')
+      .replace(/[^a-z']/g,' ')
+      .replace(/\s+/g,' ')
       .trim();
   }
 
@@ -226,7 +228,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const r = new SR();
     r.lang = 'en-US';
 
+    micBtn.classList.add('listening');
+
     r.onresult = e => {
+      micBtn.classList.remove('listening');
+
       const spoken = normalizeText(e.results[0][0].transcript);
       const target = normalizeText(current.ENG);
 
@@ -244,14 +250,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       evaluateLevel();
 
+      app.classList.remove('success','error');
+
       if (hit) {
         stats.hits++;
         feedback.textContent = '✅ Boa pronúncia';
+        app.classList.add('success');
       } else {
         stats.errors++;
         feedback.textContent = '❌ Clique nas palavras erradas';
+        app.classList.add('error');
         if (!examMode) renderDiff(diff);
       }
+
+      setTimeout(() => {
+        app.classList.remove('success','error');
+      }, 600);
 
       updateUI();
       saveAll();
@@ -261,7 +275,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* =======================
-     UI / EVENTS
+     UI
   ======================= */
   function updateUI() {
     hitsEl.textContent = stats.hits;
@@ -279,17 +293,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     setDoc(userRef, { stats, datasetKey, examMode });
   }
 
+  /* =======================
+     EVENTS
+  ======================= */
   playBtn.onclick = () => current && speakWord(current.ENG);
   micBtn.onclick = listen;
-  translateBtn.onclick = () =>
-    translationText.classList.toggle('hidden');
+  translateBtn.onclick = () => translationText.classList.toggle('hidden');
   nextBtn.onclick = nextSentence;
 
   resetBtn.onclick = () => {
     if (!confirm('Deseja apagar todo o progresso?')) return;
-    stats = {
-      level:'A1', score:0, hits:0, errors:0, streak:0, recent:[]
-    };
+    stats = { level:'A1', score:0, hits:0, errors:0, streak:0, recent:[] };
     saveAll();
     loadDataset();
     updateUI();
