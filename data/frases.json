@@ -851,8 +851,77 @@
   { "ENG": "That was a bit overwhelming.", "PTBR": "Isso foi um pouco demais.", "CEFR": "B2" },
   { "ENG": "I’m learning as I go.", "PTBR": "Estou aprendendo conforme avanço.", "CEFR": "B2" },
   { "ENG": "That’s not how I remember it.", "PTBR": "Não é assim que eu me lembro.", "CEFR": "B2" },
-  { "ENG": "I need to step back for a moment.", "PTBR": "Preciso dar um tempo por um momento.", "CEFR": "B2" }
+  { "ENG": "I need to step back for a moment.", "PTBR": "Preciso dar um tempo por um momento.", "CEFR": "B2" },
+
+  { "ENG": "I didn’t expect that to hit me the way it did.", "PTBR": "Não esperava que isso me afetasse desse jeito.", "CEFR": "C2" },
+  { "ENG": "I guess I’m still processing everything.", "PTBR": "Acho que ainda estou processando tudo.", "CEFR": "C2" },
+  { "ENG": "That’s one of those things you only realize later.", "PTBR": "Isso é daquelas coisas que você só percebe depois.", "CEFR": "C2" },
+  { "ENG": "I’m not sure how I feel about it yet.", "PTBR": "Ainda não sei bem como me sinto em relação a isso.", "CEFR": "C2" },
+  { "ENG": "It sounded like a good idea at the time.", "PTBR": "Na hora pareceu uma boa ideia.", "CEFR": "C2" },
+
+  { "ENG": "I didn’t think it would matter this much.", "PTBR": "Não achei que isso fosse importar tanto.", "CEFR": "C2" },
+  { "ENG": "That kind of caught me off guard.", "PTBR": "Isso meio que me pegou desprevenido.", "CEFR": "C2" },
+  { "ENG": "I’m still wrapping my head around it.", "PTBR": "Ainda estou tentando entender tudo.", "CEFR": "C2" },
+  { "ENG": "That wasn’t how I pictured it going.", "PTBR": "Não era assim que eu imaginava que ia acontecer.", "CEFR": "C2" },
+  { "ENG": "I didn’t realize how much I needed that.", "PTBR": "Não percebi o quanto eu precisava disso.", "CEFR": "C2" },
+
+  { "ENG": "It’s funny how things turn out sometimes.", "PTBR": "Engraçado como as coisas acabam às vezes.", "CEFR": "C2" },
+  { "ENG": "I’m glad it happened, even if it was messy.", "PTBR": "Fico feliz que tenha acontecido, mesmo tendo sido confuso.", "CEFR": "C2" },
+  { "ENG": "That’s not something I say out loud very often.", "PTBR": "Isso não é algo que eu falo em voz alta com frequência.", "CEFR": "C2" },
+  { "ENG": "I didn’t mean for it to come out like that.", "PTBR": "Não quis que soasse daquele jeito.", "CEFR": "C2" },
+  { "ENG": "I probably should’ve thought that through.", "PTBR": "Eu provavelmente deveria ter pensado melhor.", "CEFR": "C2" },
+
+  { "ENG": "I’m torn between letting it go and saying something.", "PTBR": "Estou dividido entre deixar pra lá e falar algo.", "CEFR": "C2" },
+  { "ENG": "That moment keeps replaying in my head.", "PTBR": "Esse momento fica se repetindo na minha cabeça.", "CEFR": "C2" },
+  { "ENG": "I didn’t realize how tense I was until it was over.", "PTBR": "Não percebi o quão tenso eu estava até acabar.", "CEFR": "C2" },
+  { "ENG": "It felt awkward, but also kind of necessary.", "PTBR": "Foi constrangedor, mas meio necessário.", "CEFR": "C2" },
+  { "ENG": "I’m not sure there was a right move there.", "PTBR": "Não sei se havia uma decisão certa ali.", "CEFR": "C2" },
+
+  { "ENG": "That’s one of those things that lingers.", "PTBR": "Isso é daquelas coisas que ficam martelando.", "CEFR": "C2" },
+  { "ENG": "I didn’t have the words in the moment.", "PTBR": "Na hora eu não tinha as palavras.", "CEFR": "C2" },
+  { "ENG": "It felt heavier than I expected.", "PTBR": "Pareceu mais pesado do que eu esperava.", "CEFR": "C2" },
+  { "ENG": "I keep going back and forth about it.", "PTBR": "Fico indo e voltando sobre isso.", "CEFR": "C2" },
+  { "ENG": "That’s not an easy thing to admit.", "PTBR": "Isso não é fácil de admitir.", "CEFR": "C2" },
+
+  { "ENG": "I didn’t want to overreact, but I also didn’t want to ignore it.", "PTBR": "Não queria exagerar, mas também não queria ignorar.", "CEFR": "C2" },
+  { "ENG": "It felt different once I said it out loud.", "PTBR": "Soou diferente depois que falei em voz alta.", "CEFR": "C2" },
+  { "ENG": "I wasn’t expecting that response.", "PTBR": "Não esperava aquela resposta.", "CEFR": "C2" },
+  { "ENG": "I think part of me already knew.", "PTBR": "Acho que uma parte de mim já sabia.", "CEFR": "C2" },
+  { "ENG": "That’s been sitting with me all day.", "PTBR": "Isso ficou comigo o dia inteiro.", "CEFR": "C2" },
+
+  { "ENG": "I’m trying not to read too much into it.", "PTBR": "Estou tentando não interpretar demais.", "CEFR": "C2" },
+  { "ENG": "It’s weird how quiet it got afterward.", "PTBR": "Foi estranho como tudo ficou quieto depois.", "CEFR": "C2" },
+  { "ENG": "I didn’t expect to feel this conflicted.", "PTBR": "Não esperava me sentir tão dividido.", "CEFR": "C2" },
+  { "ENG": "That kind of changed how I see things.", "PTBR": "Isso meio que mudou como eu vejo as coisas.", "CEFR": "C2" },
+  { "ENG": "I’m still figuring out what that means for me.", "PTBR": "Ainda estou entendendo o que isso significa pra mim.", "CEFR": "C2" },
+
+  { "ENG": "It felt like one of those turning-point moments.", "PTBR": "Pareceu um daqueles momentos de virada.", "CEFR": "C2" },
+  { "ENG": "I didn’t think I’d care, but here we are.", "PTBR": "Achei que não ia me importar, mas cá estamos.", "CEFR": "C2" },
+  { "ENG": "That hit closer to home than I expected.", "PTBR": "Isso mexeu mais comigo do que eu esperava.", "CEFR": "C2" },
+  { "ENG": "I’m not sure what the next step is.", "PTBR": "Não sei qual é o próximo passo.", "CEFR": "C2" },
+  { "ENG": "It left me with more questions than answers.", "PTBR": "Isso me deixou com mais perguntas do que respostas.", "CEFR": "C2" },
+
+  { "ENG": "I didn’t realize how much I’d been holding back.", "PTBR": "Não percebi o quanto eu estava me segurando.", "CEFR": "C2" },
+  { "ENG": "That conversation took more out of me than I thought.", "PTBR": "Aquela conversa me drenou mais do que eu imaginava.", "CEFR": "C2" },
+  { "ENG": "I keep wondering if I handled it right.", "PTBR": "Fico me perguntando se agi da forma certa.", "CEFR": "C2" },
+  { "ENG": "It felt unfinished, somehow.", "PTBR": "De alguma forma, pareceu inacabado.", "CEFR": "C2" },
+  { "ENG": "I don’t think there’s a clean answer here.", "PTBR": "Acho que não existe uma resposta simples aqui.", "CEFR": "C2" },
+
+  { "ENG": "I needed more time than I realized.", "PTBR": "Eu precisava de mais tempo do que imaginava.", "CEFR": "C2" },
+  { "ENG": "That silence said more than the words.", "PTBR": "Aquele silêncio disse mais do que as palavras.", "CEFR": "C2" },
+  { "ENG": "I wasn’t ready for how honest that got.", "PTBR": "Não estava preparado para o nível de sinceridade.", "CEFR": "C2" },
+  { "ENG": "It’s still sinking in.", "PTBR": "Ainda está caindo a ficha.", "CEFR": "C2" },
+  { "ENG": "I don’t think I’m done thinking about this yet.", "PTBR": "Acho que ainda não terminei de pensar sobre isso.", "CEFR": "C2" },
+
+  { "ENG": "That changed the mood instantly.", "PTBR": "Isso mudou o clima na hora.", "CEFR": "C2" },
+  { "ENG": "I didn’t know how to respond without making it worse.", "PTBR": "Não sabia como responder sem piorar.", "CEFR": "C2" },
+  { "ENG": "I think I underestimated how personal that felt.", "PTBR": "Acho que subestimei o quanto isso foi pessoal.", "CEFR": "C2" },
+  { "ENG": "It made me rethink a few things.", "PTBR": "Isso me fez repensar algumas coisas.", "CEFR": "C2" },
+  { "ENG": "I’m still deciding what to do with that.", "PTBR": "Ainda estou decidindo o que fazer com isso.", "CEFR": "C2" },
+
+  { "ENG": "That wasn’t the reaction I rehearsed in my head.", "PTBR": "Não foi a reação que eu ensaiei na cabeça.", "CEFR": "C2" },
+  { "ENG": "I didn’t expect it to feel so unresolved.", "PTBR": "Não esperava que ficasse tão mal resolvido.", "CEFR": "C2" },
+  { "ENG": "It left me oddly relieved and uneasy at the same time.", "PTBR": "Me deixou estranhamente aliviado e inquieto ao mesmo tempo.", "CEFR": "C2" },
+  { "ENG": "I guess some things don’t wrap up neatly.", "PTBR": "Acho que algumas coisas não se resolvem direitinho.", "CEFR": "C2" },
+  { "ENG": "I’m learning to sit with that discomfort.", "PTBR": "Estou aprendendo a conviver com esse desconforto.", "CEFR": "C2" }
 ]
-
-
-  
