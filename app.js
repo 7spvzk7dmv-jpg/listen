@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const SCORE_RULES = {
     hits:   { A1:1, A2:2, B1:2, B2:5, C1:5, C2:5 },
-    errors: { A1:-5, A2:-5, B1:-5, B2:-3, C1:-3, C2:-1 }
+    errors: { A1:-5, A2:-5, B1:-5, B2:-3, C1:-3, C2:-3 }
   };
 
   const SCORE_MIN = 0;
@@ -172,8 +172,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   function applyStreak(hit) {
     if (hit) {
       stats.streak++;
-      if (stats.streak === 3) stats.score += 1;
-      if (stats.streak === 5) stats.score += 2;
+      if (stats.streak === 4) stats.score += 1;
+      if (stats.streak === 10) stats.score += 2;
     } else {
       stats.streak = 0;
     }
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (stats.score >= upper && acc >= 0.8 && stats.streak >= 3)
       stats.level = levelFromScore(stats.score);
 
-    if (stats.score < upper - 10 && acc < 0.55)
+    if (stats.score < upper - 10 && acc < 0.50)
       stats.level = levelFromScore(stats.score);
   }
 
