@@ -84,6 +84,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     Math.min(SCORE_MAX, Math.max(SCORE_MIN, v));
 
   /* =======================
+     TTS (NARRAÇÃO)
+  ======================= */
+  let selectedVoice = null;
+
+  function pickEnglishVoice() {
+    const voices = speechSynthesis.getVoices();
+    selectedVoice =
+      voices.find(v => v.lang === 'en-US') ||
+      voices.find(v => v.lang.startsWith('en')) ||
+      null;
+  }
+
+  speechSynthesis.onvoiceschanged = pickEnglishVoice;
+  pickEnglishVoice();
+
+  function speakWord(text) {
+    if (!text) return;
+    speechSynthesis.cancel();
+
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.voice = selectedVoice;
+    u.rate = 0.9;
+    u.pitch = 1;
+
+    speechSynthesis.speak(u);
+  }
+
+  window.speakWord = speakWord; // necessário para clique nas palavras erradas
+
+  /* =======================
      NORMALIZAÇÃO
   ======================= */
   function normalizeText(t) {
@@ -285,7 +316,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     toggleDatasetBtn.textContent = `Dataset: ${datasetKey}`;
     examModeBtn.textContent =
-      examMode ? '📝 Modo exame: ON' : '📝 Modo exame: OFF';
+      examMode ? 'Exame: ON' : 'Exame: OFF';
   }
 
   function saveAll() {
